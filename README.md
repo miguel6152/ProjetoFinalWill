@@ -85,7 +85,7 @@ docs/
 
 ## Como rodar
 
-A base Electron/TypeScript da etapa 1 está descrita em [docs/INFRAESTRUTURA.md](docs/INFRAESTRUTURA.md). Use Node 24 LTS. Banco, login e módulos de negócio ainda não estão implementados.
+A base Electron/TypeScript está descrita em [docs/INFRAESTRUTURA.md](docs/INFRAESTRUTURA.md), e a conexão SQLite com migrations em [docs/BANCO.md](docs/BANCO.md). Use Node 24 LTS. Login e módulos de negócio ainda não estão implementados.
 
 ```bash
 git clone https://github.com/miguel6152/ProjetoFinalWill.git
@@ -95,7 +95,7 @@ npm run setup:electron
 npm run dev
 ```
 
-Para verificar: `npm run typecheck`, `npm run build` e `npm run test:infra`. Ainda não existem variáveis de ambiente necessárias nesta etapa.
+Para verificar: `npm run typecheck`, `npm run build`, `npm run test:banco` e `npm run test:infra`. Ainda não existem variáveis de ambiente necessárias nesta etapa. Os testes do banco usam exclusivamente memória e arquivos temporários.
 
 ## Fluxo de trabalho no Git
 

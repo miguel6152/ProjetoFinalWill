@@ -1,5 +1,7 @@
 # Infraestrutura — etapa 1
 
+Atualização: a etapa 2 de SQLite e migrations foi adicionada e está descrita em [BANCO.md](BANCO.md). As seções abaixo registram o escopo e as verificações originais da etapa 1; autenticação, autorização e CRUDs continuam pendentes.
+
 Esta entrega configura somente Electron, TypeScript e os contratos de comunicação de Miguel. Banco, migrations, autenticação, autorização e CRUDs ainda não estão implementados. `AutenticacaoService` e `Autorizador` mantêm os nomes previstos na arquitetura.
 
 ## Ambiente e execução

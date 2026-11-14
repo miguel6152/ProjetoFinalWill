@@ -1,6 +1,6 @@
 # Arquitetura do sistema de gestão da academia
 
-Documento de planejamento baseado no `AGENTS.md` e no `README.md`. A aplicação ainda não foi implementada. As escolhas abaixo são propostas técnicas para orientar as entregas do grupo; regras comerciais ainda não informadas estão identificadas ao final.
+Documento de arquitetura baseado no `AGENTS.md` e no `README.md`. As decisões monetárias identificadas como aprovadas na seção 2 são regras do projeto. As demais propostas técnicas e questões comerciais pendentes continuam sujeitas à validação do grupo, sem aprovação implícita por este registro.
 
 ## 1. Visão geral e limites das camadas
 
@@ -170,6 +170,31 @@ erDiagram
 - A conexão habilita `PRAGMA foreign_keys = ON` antes de qualquer operação. Todas as FKs usam `ON DELETE RESTRICT`; excluir um registro referenciado retorna conflito com mensagem clara. CRUD inclui exclusão física de registros sem dependências; desativar ou cancelar preserva histórico quando existem vínculos. Não há cascata destrutiva.
 - Migrations aplicam `NOT NULL`, `UNIQUE`, `CHECK` para enums, valores e coerência de datas, além das FKs. Regras entre tabelas ficam nos services, dentro de transações. Índices cobrem FKs, vencimento de cobranças, fim de matrículas, horário das aulas e `(aluno_id, realizada_em)` nas avaliações.
 - Inscrever aluno verifica matrícula válida na data da aula, capacidade e duplicidade dentro de uma transação. Alterações de aula e inscrição preservam capacidade; mudanças no perfil de usuário vinculado a instrutor são bloqueadas enquanto incompatíveis. Não se exclui nem desativa o último admin ativo.
+
+### Decisões monetárias aprovadas
+
+Os valores monetários são armazenados em centavos, com tipo `INTEGER`. Nas três colunas monetárias atuais, valores negativos não são permitidos:
+
+| Tabela e coluna | Regra aprovada |
+|---|---|
+| `planos.valor_centavos` | Maior ou igual a zero |
+| `matriculas.valor_contratado_centavos` | Maior ou igual a zero |
+| `pagamentos.valor_centavos` | Maior ou igual a zero |
+
+Valores iguais a zero são permitidos nas três colunas, inclusive para planos gratuitos. Essa permissão não define o fluxo de isenção individual, geração de cobrança zerada ou quitação.
+
+Créditos, descontos, estornos e reembolsos não devem ser representados simplesmente por valores negativos nessas colunas. Caso essas funcionalidades sejam implementadas, deverão possuir operações e registros próprios, preservando o histórico financeiro. Essa diretriz de modelagem está aprovada; não aprova a inclusão dessas funcionalidades no escopo nem define tabelas, campos, cálculos ou fluxos para elas.
+
+### Questões financeiras ainda pendentes
+
+As seguintes questões precisam ser discutidas com o grupo, especialmente Davi Rodrigues e Vitor Meneghin, antes da implementação correspondente:
+
+- Se o preço de planos trimestrais e anuais representa o total do período ou um valor mensal.
+- Como serão tratados descontos e isenções individuais.
+- Como funcionarão créditos, pagamentos parciais e reembolsos, incluindo o detalhamento de eventuais operações de estorno.
+- Como será definido o calendário de cobrança e parcelamento.
+
+Nenhuma dessas pendências é resolvida pela regra de não negatividade ou pela permissão de zero. As constraints já existentes não substituem a aprovação das políticas comerciais.
 
 ## 3. Estrutura prevista de src/
 
@@ -476,6 +501,8 @@ Usar credencial aleatória de curta duração associada à sessão, mantida apen
 ## 9. Decisões a validar e sequência de implementação
 
 Antes das respectivas funcionalidades, validar com o grupo: Telegram ou e-mail como provedor definitivo; antecedência do aviso; limiar de chuva; calendário de cobrança e parcelamento de planos trimestrais/anuais; sobreposição de matrículas; política de retenção e correção de pagamentos quitados; prazo de sessão; e a matriz proposta de permissões. Não presumir desconto, multa, bloqueio automático por inadimplência ou cancelamento por chuva.
+
+As decisões monetárias aprovadas e as questões financeiras ainda pendentes estão separadas na seção 2. A não negatividade e a permissão de valores zero estão aprovadas; a interpretação do preço por período, descontos/isenções individuais, créditos, pagamentos parciais, reembolsos e calendário de cobrança continuam pendentes de discussão com Davi e Vitor.
 
 A implementação deve avançar em entregas pequenas: Miguel estabelece infraestrutura, migrations e autenticação; em seguida cada integrante entrega um CRUD completo de seu domínio, com autorização e validação; depois entram integrações e relatórios. Davi e Vitor precisam alinhar geração das cobranças da matrícula em uma única transação quando a política comercial for definida. Não adicionar dependências além da stack sem justificativa.
 
