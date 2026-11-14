@@ -22,7 +22,7 @@ class VerificarInfraestrutura {
         csp: document.querySelector('meta[http-equiv="Content-Security-Policy"]').content
       })`);
       assert.deepEqual(estado, {
-        require: 'undefined', process: 'undefined', ponte: 'object', capacidades: [],
+        require: 'undefined', process: 'undefined', ponte: 'object', capacidades: ['autenticacao'],
         mensagem: 'Infraestrutura inicial do aplicativo.',
         csp: "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'"
       });

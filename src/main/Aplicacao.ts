@@ -26,7 +26,7 @@ class Aplicacao {
 
   private async abrirJanela(): Promise<void> {
     try {
-      await new JanelaPrincipal().abrir();
+      await new JanelaPrincipal().abrir(true, (janela, url): void => this.composicao.vincularJanela(janela, url));
     } catch {
       this.composicao.encerrar();
       dialog.showErrorBox('Sistema de Academia', 'Não foi possível abrir a interface. Execute o build novamente.');

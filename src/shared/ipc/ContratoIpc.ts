@@ -1,7 +1,8 @@
 import type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 export type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 
-export type Perfil = 'admin' | 'recepcao' | 'instrutor';
+import type { Perfil, SaidaAutenticacao, SaidaLogout, CredenciaisEntrada } from '../tipos/Autenticacao';
+export type { Perfil, UsuarioSessao } from '../tipos/Autenticacao';
 export type CodigoErro = 'VALIDACAO' | 'NAO_AUTENTICADO' | 'SEM_PERMISSAO' |
   'NAO_ENCONTRADO' | 'CONFLITO' | 'REDE' | 'INTERNO';
 export type Resultado<T> = { sucesso: true; dados: T } | {
@@ -24,11 +25,10 @@ export interface NovoUsuario {
   perfil: Perfil;
   ativo: number;
 }
-export interface UsuarioSessao { id: number; nome: string; perfil: Perfil }
 export interface ContratoIpc {
-  'auth:entrar': { entrada: { email: string; senha: string }; saida: { usuario: UsuarioSessao } };
-  'auth:sessao': { entrada: undefined; saida: { usuario: UsuarioSessao } };
-  'auth:sair': { entrada: undefined; saida: { encerrada: true } };
+  'auth:entrar': { entrada: CredenciaisEntrada; saida: SaidaAutenticacao };
+  'auth:sessao': { entrada: undefined; saida: SaidaAutenticacao };
+  'auth:sair': { entrada: undefined; saida: SaidaLogout };
   'usuarios:criar': { entrada: NovoUsuario; saida: UsuarioDto };
   'usuarios:listar': { entrada: EntradaLista; saida: Pagina<UsuarioDto> };
   'usuarios:obter': { entrada: { id: number }; saida: UsuarioDto };

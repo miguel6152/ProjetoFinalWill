@@ -3,7 +3,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export class JanelaPrincipal {
-  public async abrir(visivel: boolean = true): Promise<BrowserWindow> {
+  public async abrir(visivel: boolean = true, preparar?: (janela: BrowserWindow, url: string) => void): Promise<BrowserWindow> {
     const pagina: string = path.join(__dirname, '../renderer/index.html');
     const urlPermitida: string = pathToFileURL(pagina).href;
     const sessao = session.fromPartition('academia');
@@ -31,6 +31,7 @@ export class JanelaPrincipal {
     janela.webContents.on('will-attach-webview', (evento): void => evento.preventDefault());
     janela.removeMenu();
     try {
+      preparar?.(janela, urlPermitida);
       await janela.loadFile(pagina);
       if (visivel) janela.show();
       return janela;
