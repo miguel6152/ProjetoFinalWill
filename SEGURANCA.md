@@ -1,6 +1,6 @@
-# Segurança — estado após a infraestrutura de banco
+# Segurança — estado após banco e BaseRepository
 
-Este documento distingue controles implementados de controles planejados. A aplicação ainda não possui login, autorização, CRUDs ou cadastro de dados pela interface. Não utilizar esta etapa isolada como sistema pronto para dados reais.
+Este documento distingue controles implementados de controles planejados. O BaseRepository possui operações genéricas internas, mas a aplicação ainda não possui login, autorização, CRUDs de entidades ou cadastro de dados pela interface. Não utilizar esta etapa isolada como sistema pronto para dados reais.
 
 ## Controles implementados
 
@@ -8,9 +8,11 @@ Este documento distingue controles implementados de controles planejados. A apli
 - Electron utiliza isolamento de contexto, sandbox, Node desabilitado no renderer, CSP restritiva, permissões negadas, bloqueio de popups e navegação controlada.
 - FKs são habilitadas e verificadas em toda conexão. Exclusões de registros referenciados são bloqueadas sem cascata, evitando perda indireta de histórico.
 - Constraints de tipos, nulabilidade, unicidade e valores estruturais reduzem inconsistências. Dados variáveis usam parâmetros; DDL é interno e não aceita entrada do renderer.
+- BaseRepository valida IDs, paginação e entradas de escrita. Identificadores vêm da configuração interna validada e congelada; campos protegidos, extras, undefined, acessores e protótipos inesperados são rejeitados. Getters não são executados durante a captura das entradas. Os tipos TypeScript não substituem essa validação em execução.
+- Leituras paginadas usam snapshot DEFERRED; escritas e releituras usam transação atômica, com savepoints quando existe transação externa. Constraints/FKs permanecem ativas. Erros têm códigos e mensagens fixas, sem SQL, parâmetros ou causa interna. O repository não faz autenticação nem autorização: esses controles continuam obrigatórios nas próximas camadas. Detalhes e limites em [docs/BASE_REPOSITORY.md](docs/BASE_REPOSITORY.md).
 - Migrations são transacionais por versão e não removem o banco diante de erro. Erros exibidos na inicialização não incluem SQL, dados ou detalhes internos.
 - Migrations exigem retorno `undefined` e recebem somente uma API SQL limitada, revogada em `finally` antes do registro da versão e da conclusão da transação. Retornos assíncronos são rejeitados e SQL tardio por essa API é bloqueado. Isso não cancela JavaScript agendado nem isola código que obtenha outra conexão ou produza efeitos externos. Detalhes e testes em `docs/BANCO.md`.
-- Banco persistente fica em `userData`, fora do repositório; arquivos SQLite, `.env` e dependências estão ignorados pelo Git. Não há segredos embutidos ou variáveis de ambiente necessárias nestas duas etapas.
+- Banco persistente fica em `userData`, fora do repositório; arquivos SQLite, `.env` e dependências estão ignorados pelo Git. Não há segredos embutidos ou variáveis de ambiente necessárias na infraestrutura atual.
 - Testes usam apenas bancos em memória ou arquivos temporários e dados sintéticos. O campo de hash em fixtures contém um marcador não utilizável para autenticação, nunca uma senha em texto puro.
 
 ## Decisões monetárias aprovadas e histórico financeiro

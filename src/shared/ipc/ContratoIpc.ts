@@ -1,3 +1,6 @@
+import type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
+export type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
+
 export type Perfil = 'admin' | 'recepcao' | 'instrutor';
 export type CodigoErro = 'VALIDACAO' | 'NAO_AUTENTICADO' | 'SEM_PERMISSAO' |
   'NAO_ENCONTRADO' | 'CONFLITO' | 'REDE' | 'INTERNO';
@@ -22,8 +25,6 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface UsuarioSessao { id: number; nome: string; perfil: Perfil }
-export interface EntradaLista { pagina: number; tamanho: number; busca?: string }
-export interface Pagina<T> { itens: T[]; total: number; pagina: number; tamanho: number }
 export interface ContratoIpc {
   'auth:entrar': { entrada: { email: string; senha: string }; saida: { usuario: UsuarioSessao } };
   'auth:sessao': { entrada: undefined; saida: { usuario: UsuarioSessao } };

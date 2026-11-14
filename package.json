@@ -14,7 +14,10 @@
     "start": "electron .",
     "dev": "npm run build && npm start",
     "test:infra": "npm run build && electron dist/tools/VerificarInfraestrutura.js",
-    "test:banco": "npm run build && electron dist/tools/VerificarBanco.js"
+    "test:banco": "npm run build && electron dist/tools/VerificarBanco.js",
+    "test:contratos": "npm run build && node dist/tools/VerificarContratosRepository.js",
+    "test:leituras": "npm run build && electron dist/tools/VerificarLeiturasRepository.js",
+    "test:escritas": "npm run build && electron dist/tools/VerificarEscritasRepository.js"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

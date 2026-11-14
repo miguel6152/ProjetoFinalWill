@@ -14,5 +14,5 @@
     "outDir": "dist",
     "skipLibCheck": false
   },
-  "include": ["src/main/**/*.ts", "src/preload/**/*.ts", "src/shared/**/*.ts", "src/renderer/ambiente.d.ts", "tools/**/*.ts"]
+  "include": ["src/main/**/*.ts", "src/preload/**/*.ts", "src/shared/**/*.ts", "src/repositories/**/*.ts", "src/renderer/ambiente.d.ts", "tools/**/*.ts"]
 }

@@ -2,6 +2,8 @@
 
 Implementação da infraestrutura de banco de Miguel, conforme `ARQUITETURA.md`. Esta etapa não implementa repositories, services de negócio, autenticação ou novos canais IPC.
 
+A Etapa 3 acrescentou a infraestrutura compartilhada BaseRepository sobre esta conexão, sem modificar schema ou migrations. Suas cinco operações, validações, erros, integração e limites estão em [BASE_REPOSITORY.md](BASE_REPOSITORY.md). A entrega do banco descrita abaixo permanece a referência da Etapa 2; não existem repositories de entidades ou services de negócio nesta entrega.
+
 ## Compatibilidade confirmada
 
 `better-sqlite3` 13.1.1 foi carregado no **processo Main do Electron 45.3.2**, no Windows x64, com Node embarcado 24.22.2, ABI de módulos 150 e Node-API 10. O teste abriu banco em memória, executou SQL parametrizado, aplicou migrations e fechou a conexão. Não foi necessário recompilar nem instalar `@electron/rebuild`.
@@ -60,6 +62,8 @@ Não há triggers de negócio. Validação dos dígitos verificadores de CPF, sc
 ## Transações e histórico
 
 `Conexao.transacao` usa `Database.transaction(...).immediate()`: retorno normal confirma; exceção desfaz e é propagada. Chamadas aninhadas usam savepoints. A API exige callbacks síncronos e rejeita retorno de objeto semelhante a Promise; não usar rede, `await` ou efeitos externos na transação. Erros não devem ser engolidos dentro do callback quando o objetivo é desfazer toda a operação.
+
+Para a listagem paginada, Conexao.transacaoLeitura usa DEFERRED e mantém contagem e itens no snapshot da primeira leitura. Não reserva escrita antecipadamente; pode manter bloqueios de leitura conforme o modo de journal. Em uma transação externa, usa savepoint e herda seu snapshot e bloqueios. As escritas do BaseRepository continuam usando transacao/IMMEDIATE; create/update incluem a releitura no escopo atômico. A API interna de leitura não impõe modo read-only e a rejeição de retorno assíncrono não cancela tarefas já agendadas. Os callbacks do repository são estritamente síncronos e internos. Isso não altera a proteção específica e revogável das migrations descrita abaixo.
 
 O contrato `Migracao.aplicar(contexto)` retorna **`undefined`**, não `void`: o TypeScript rejeita implementações cujo retorno seja Promise, PromiseLike ou uma união assíncrona. Uma função que termina normalmente precisa concluir seu SQL antes de retornar. Isso não impede, por análise estática, que uma função esconda timers ou outras tarefas e retorne `undefined`.
 

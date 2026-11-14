@@ -39,4 +39,16 @@ export class Conexao {
   public fechar(): void {
     if (this.banco.open) this.banco.close();
   }
+
+  // O repository usa somente SELECTs síncronos neste escopo. DEFERRED não
+  // reserva escrita e mantém contagem/listagem no snapshot da primeira leitura.
+  public transacaoLeitura<T>(operacao: () => T extends PromiseLike<unknown> ? never : T): T {
+    return this.banco.transaction((): T => {
+      const resultado: T = operacao();
+      if (resultado !== null && typeof resultado === 'object' && 'then' in resultado) {
+        throw new Error('Transações exigem operações síncronas.');
+      }
+      return resultado;
+    }).deferred();
+  }
 }
