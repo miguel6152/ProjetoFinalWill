@@ -85,15 +85,17 @@ docs/
 
 ## Como rodar
 
+A base Electron/TypeScript da etapa 1 está descrita em [docs/INFRAESTRUTURA.md](docs/INFRAESTRUTURA.md). Use Node 24 LTS. Banco, login e módulos de negócio ainda não estão implementados.
+
 ```bash
 git clone https://github.com/miguel6152/ProjetoFinalWill.git
 cd ProjetoFinalWill
 npm install
-cp .env.example .env   # preencha as chaves
+npm run setup:electron
 npm run dev
 ```
 
-> Os comandos serão ajustados conforme a base do projeto ficar pronta.
+Para verificar: `npm run typecheck`, `npm run build` e `npm run test:infra`. Ainda não existem variáveis de ambiente necessárias nesta etapa.
 
 ## Fluxo de trabalho no Git
 

@@ -1,0 +1,21 @@
+{
+  "name": "sistema-academia",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema desktop de gestão da academia",
+  "main": "dist/src/main/Aplicacao.js",
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "setup:electron": "install-electron",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.renderer.json --noEmit",
+    "build": "tsc && tsc -p tsconfig.renderer.json && node dist/tools/CopiarAssets.js",
+    "start": "electron .",
+    "dev": "npm run build && npm start",
+    "test:infra": "npm run build && electron dist/tools/VerificarInfraestrutura.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "electron": "45.3.2",
+    "typescript": "7.0.2"
+  }
+}
