@@ -15,11 +15,13 @@ export class Autorizador implements ContratoAutorizador {
       // Logout, troca de usuário e destruição durante a consulta impedem resposta tardia.
       if (this.sessoes.obter(contexto) !== sessao) throw new ErroAutenticacao('NAO_AUTENTICADO');
       const atual = encontrado === undefined ? undefined : ValidacaoAutenticacao.identidade.parse(encontrado);
-      if (atual === undefined || !atual.ativo || atual.id !== sessao.usuarioId) {
+      if (atual === undefined || !atual.ativo || atual.id !== sessao.usuarioId
+          || atual.identidadeConta !== sessao.identidadeConta || atual.versaoCredencial !== sessao.versaoCredencial) {
         this.sessoes.encerrar(contexto);
         throw new ErroAutenticacao('NAO_AUTENTICADO');
       }
-      return { id: atual.id, nome: atual.nome, perfil: atual.perfil, ativo: atual.ativo };
+      return { id: atual.id, nome: atual.nome, perfil: atual.perfil, ativo: atual.ativo,
+        identidadeConta: atual.identidadeConta, versaoCredencial: atual.versaoCredencial };
     } catch (erro: unknown) {
       if (erro instanceof ErroAutenticacao) throw new ErroAutenticacao(erro.codigo);
       // Um erro da consulta antiga não tem autoridade sobre a sessão substituta.

@@ -15,6 +15,8 @@ export class ValidacaoAutenticacao {
   }).strict();
   public static readonly contexto = z.object({ webContentsId: z.number().int().positive().safe() }).strict();
   public static readonly identidade = z.object({
+    identidadeConta: z.string().regex(/^[0-9a-f]{32}$/),
+    versaoCredencial: z.number().int().positive().safe(),
     id: z.number().int().positive().safe(),
     nome: z.string().min(1),
     perfil: z.enum(['admin', 'recepcao', 'instrutor']),

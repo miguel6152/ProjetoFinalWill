@@ -62,7 +62,7 @@ export class VerificarAutenticacao {
   private async verificarServico(): Promise<void> {
     const hashReal = new HashSenhaArgon2();
     const codificado = await hashReal.gerar(this.senha);
-    let usuario: DadosAutenticacao | undefined = { id: 1, nome: 'Pessoa Teste', perfil: 'admin', ativo: true, senhaHash: codificado };
+    let usuario: DadosAutenticacao | undefined = { id: 1, nome: 'Pessoa Teste', perfil: 'admin', ativo: true, senhaHash: codificado, identidadeConta: 'a'.repeat(32), versaoCredencial: 1 };
     let atual: IdentidadeAutenticada | undefined = usuario;
     let consultas = 0;
     let verificacoes = 0;

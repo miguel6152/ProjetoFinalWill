@@ -1,16 +1,25 @@
 import { randomBytes } from 'node:crypto';
-import type { ContratoAutenticacaoService, DependenciasAutenticacao } from '../main/seguranca/ContratosAutenticacao';
+import type { ContratoAutenticacaoService, DependenciasAutenticacao, IdentidadeAutenticada } from '../main/seguranca/ContratosAutenticacao';
 import { ErroAutenticacao } from '../main/seguranca/ErroAutenticacao';
 import type { UsuarioSessao } from '../shared/tipos/Autenticacao';
 import { ValidacaoAutenticacao } from './ValidacaoAutenticacao';
+import { LimitadorLogin } from '../main/seguranca/LimitadorLogin';
 
 /** Implementa somente a verificação de credenciais da 4.2, sem estabelecer sessão. */
 export class AutenticacaoService implements Pick<ContratoAutenticacaoService, 'entrar'> {
   private hashAusente: Promise<string> | undefined;
 
-  public constructor(private readonly dependencias: Pick<DependenciasAutenticacao, 'dados' | 'hash'>) {}
+  public constructor(private readonly dependencias: Pick<DependenciasAutenticacao, 'dados' | 'hash'>,
+    private readonly limitador: LimitadorLogin = new LimitadorLogin()) {}
 
   public async entrar(credenciais: unknown, contexto: unknown): Promise<UsuarioSessao> {
+    const atual = await this.verificarCredenciais(credenciais, contexto);
+    return { id: atual.id, nome: atual.nome, perfil: atual.perfil };
+  }
+
+  /** Porta interna do Main: o vínculo da conta nunca é copiado para DTO público. */
+  public async verificarCredenciais(credenciais: unknown, contexto: unknown): Promise<IdentidadeAutenticada> {
+    let liberar: (() => void) | undefined;
     // Contexto vem do Main; validá-lo não prova a origem de um evento IPC.
     try {
       ValidacaoAutenticacao.exigirObjetoPlano(credenciais, ['email', 'senha']);
@@ -18,6 +27,7 @@ export class AutenticacaoService implements Pick<ContratoAutenticacaoService, 'e
       const entrada = ValidacaoAutenticacao.credenciais.safeParse(credenciais);
       const origem = ValidacaoAutenticacao.contexto.safeParse(contexto);
       if (!entrada.success || !origem.success) throw new ErroAutenticacao('VALIDACAO');
+      liberar = this.limitador.admitir(origem.data);
 
       // Toda tentativa válida aguarda a mesma inicialização, inclusive conta existente.
       const hashAusente = await this.obterHashAusente();
@@ -29,13 +39,16 @@ export class AutenticacaoService implements Pick<ContratoAutenticacaoService, 'e
       // Nova leitura após await evita retornar identidade desativada/alterada durante o hash.
       const atual = await this.dependencias.dados.buscarIdentidadePorId(usuario.id);
       const identidade = atual === undefined ? undefined : ValidacaoAutenticacao.identidade.parse(atual);
-      if (identidade === undefined || !identidade.ativo || identidade.id !== usuario.id) {
+      if (identidade === undefined || !identidade.ativo || identidade.id !== usuario.id
+          || identidade.identidadeConta !== usuario.identidadeConta || identidade.versaoCredencial !== usuario.versaoCredencial) {
         throw new ErroAutenticacao('NAO_AUTENTICADO');
       }
-      return { id: identidade.id, nome: identidade.nome, perfil: identidade.perfil };
+      return identidade;
     } catch (erro: unknown) {
       if (erro instanceof ErroAutenticacao) throw new ErroAutenticacao(erro.codigo);
       throw new ErroAutenticacao('INTERNO');
+    } finally {
+      liberar?.();
     }
   }
 

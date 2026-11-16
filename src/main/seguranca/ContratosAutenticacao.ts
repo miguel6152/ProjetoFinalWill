@@ -2,6 +2,8 @@ import type { CredenciaisEntrada, Perfil, UsuarioSessao } from '../../shared/tip
 
 /** Projeção interna independente de tabela, driver e BaseRepository. */
 export interface IdentidadeAutenticada {
+  readonly identidadeConta: string;
+  readonly versaoCredencial: number;
   readonly id: number;
   readonly nome: string;
   readonly perfil: Perfil;
@@ -49,6 +51,8 @@ export interface ContextoSessao { readonly webContentsId: number }
 /** Estado privado do Main. Perfil e atividade devem ser relidos antes de autorizar. */
 export interface SessaoInterna {
   readonly usuarioId: number;
+  readonly identidadeConta: string;
+  readonly versaoCredencial: number;
   readonly criadaEm: string;
 }
 
@@ -63,7 +67,7 @@ export interface ContratoAutenticacaoService {
 
 /** Sessões somente em memória no Main, vinculadas ao webContents confiável. */
 export interface ContratoSessaoManager {
-  estabelecer(contexto: ContextoSessao, usuarioId: number): void;
+  estabelecer(contexto: ContextoSessao, usuarioId: number, identidadeConta: string, versaoCredencial: number): void;
   obter(contexto: ContextoSessao): Readonly<SessaoInterna> | undefined;
   encerrar(contexto: ContextoSessao): void;
   encerrarTodas(): void;

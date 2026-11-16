@@ -9,7 +9,7 @@ class VerificarSessoes {
   public async executar(): Promise<void> {
     const contexto: ContextoSessao = { webContentsId: 7 };
     const sessoes = new SessaoManager();
-    let atual: IdentidadeAutenticada | undefined = { id: 1, nome: 'Sintético', perfil: 'admin', ativo: true };
+    let atual: IdentidadeAutenticada | undefined = { id: 1, nome: 'Sintético', perfil: 'admin', ativo: true, identidadeConta: 'a'.repeat(32), versaoCredencial: 1 };
     let falhar = false;
     let aguardar: Promise<void> | undefined;
     const dados: ContratoDadosAutenticacao = {
@@ -17,9 +17,9 @@ class VerificarSessoes {
       buscarIdentidadePorId: async () => { if (falhar) throw new Error('SEGREDO_SQL'); return atual; }
     };
     const autorizador = new Autorizador(sessoes, dados);
-    const servico = new SessaoAutenticacaoService({ entrar: async () => {
+    const servico = new SessaoAutenticacaoService({ verificarCredenciais: async () => {
       await aguardar;
-      return { id: 1, nome: 'Sintético', perfil: 'admin' };
+      return { id: 1, nome: 'Sintético', perfil: 'admin' as const, ativo: true, identidadeConta: 'a'.repeat(32), versaoCredencial: 1 };
     } }, sessoes, autorizador);
     await this.erro(servico.obterSessao(contexto), 'SEM_PERMISSAO');
     await this.erro(servico.entrar({ email: 'sintetico@example.invalid', senha: 'sintetica' }, contexto), 'SEM_PERMISSAO');
@@ -29,10 +29,10 @@ class VerificarSessoes {
     assert.equal((await servico.entrar(entrada, contexto)).id, 1);
     const interna = sessoes.obter(contexto);
     assert.ok(Object.isFrozen(interna));
-    assert.deepEqual(Object.keys(interna ?? {}).sort(), ['criadaEm', 'usuarioId']);
+    assert.deepEqual(Object.keys(interna ?? {}).sort(), ['criadaEm', 'identidadeConta', 'usuarioId', 'versaoCredencial']);
     assert.notEqual(interna?.criadaEm, undefined);
     assert.equal(Number.isNaN(Date.parse(interna?.criadaEm ?? '')), false);
-    atual = { id: 1, nome: 'Atualizado', perfil: 'instrutor', ativo: true };
+    atual = { id: 1, nome: 'Atualizado', perfil: 'instrutor', ativo: true, identidadeConta: 'a'.repeat(32), versaoCredencial: 1 };
     assert.deepEqual(await servico.obterSessao(contexto), { id: 1, nome: 'Atualizado', perfil: 'instrutor' });
     await this.erro(autorizador.exigirPerfil(contexto, []), 'SEM_PERMISSAO');
     await this.erro(autorizador.exigirPerfil(contexto, ['admin']), 'SEM_PERMISSAO');

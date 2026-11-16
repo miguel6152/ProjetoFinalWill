@@ -92,7 +92,7 @@ export class AutenticacaoHandler {
     }
   }
 
-  private contexto(evento: Pick<IpcMainInvokeEvent, 'sender' | 'senderFrame'>): ContextoSessao {
+  public contexto(evento: Pick<IpcMainInvokeEvent, 'sender' | 'senderFrame'>): ContextoSessao {
     const conteudo = evento.sender;
     const registro = this.janelas.get(conteudo);
     if (registro === undefined || registro.janela.isDestroyed() || conteudo.isDestroyed()

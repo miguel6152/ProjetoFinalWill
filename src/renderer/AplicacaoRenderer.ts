@@ -1,8 +1,62 @@
+import type { UsuarioSessao } from '../shared/tipos/Autenticacao.js';
+import { LoginTela } from './telas/LoginTela.js';
+import { UsuariosTela } from './telas/UsuariosTela.js';
+
 class AplicacaoRenderer {
-  public iniciar(): void {
-    const mensagem: HTMLElement | null = document.getElementById('estado');
-    if (mensagem !== null) mensagem.textContent = 'Infraestrutura inicial do aplicativo.';
+  private geracao = 0;
+  private usuarios: UsuariosTela | undefined;
+  private readonly conteudo = document.getElementById('conteudo')!;
+  private readonly estado = document.getElementById('estado')!;
+  private readonly conta = document.getElementById('conta')!;
+
+  public async iniciar(): Promise<void> {
+    try {
+      const ponte = window.academia.inicializacao;
+      if (ponte === undefined) throw new Error('Ponte indisponível.');
+      const inicial = await ponte.estado(undefined);
+      if (!inicial.sucesso) { this.estado.textContent = inicial.erro.mensagem; return; }
+      if (inicial.dados.necessario) { this.login(true); return; }
+      const sessao = await window.academia.autenticacao?.sessao(undefined);
+      if (sessao?.sucesso) this.painel(sessao.dados.usuario);
+      else this.login(false);
+    } catch { this.estado.textContent = 'Não foi possível iniciar a interface. Feche e abra o aplicativo novamente.'; }
+  }
+
+  private login(inicial: boolean, mensagem?: string): void {
+    this.geracao++; this.usuarios?.encerrar(); this.usuarios = undefined; this.conta.replaceChildren();
+    this.estado.textContent = mensagem ?? (inicial ? 'Configuração inicial' : 'Acesso ao sistema');
+    const geracao = this.geracao;
+    new LoginTela(this.conteudo).mostrar(inicial, async dados => {
+      if (inicial) {
+        const resultado = await window.academia.inicializacao!.criarAdministrador(dados);
+        if (geracao !== this.geracao) return undefined;
+        if (!resultado.sucesso) return resultado.erro.mensagem;
+        this.login(false, 'Administrador criado. Entre com suas credenciais.'); return undefined;
+      }
+      const resultado = await window.academia.autenticacao!.entrar({ email: dados.email, senha: dados.senha });
+      if (geracao !== this.geracao) return undefined;
+      if (!resultado.sucesso) return resultado.erro.mensagem;
+      this.painel(resultado.dados.usuario); return undefined;
+    });
+  }
+
+  private painel(usuario: UsuarioSessao): void {
+    this.geracao++; this.usuarios?.encerrar(); this.estado.textContent = 'Sessão iniciada';
+    const nome = document.createElement('span'); nome.textContent = `${usuario.nome} · ${usuario.perfil}`;
+    const sair = document.createElement('button'); sair.id = 'sair'; sair.type = 'button'; sair.textContent = 'Sair';
+    sair.addEventListener('click', () => {
+      sair.disabled = true;
+      void window.academia.autenticacao!.sair(undefined).catch(() => undefined).finally(() => this.login(false));
+    });
+    this.conta.replaceChildren(nome, sair);
+    if (usuario.perfil === 'admin' && window.academia.usuarios !== undefined) {
+      this.usuarios = new UsuariosTela(this.conteudo, window.academia.usuarios, () => this.login(false, 'Sua sessão terminou. Entre novamente.'), usuario.id);
+      this.usuarios.mostrar();
+    } else {
+      const titulo = document.createElement('h2'); titulo.textContent = 'Bem-vindo';
+      const texto = document.createElement('p'); texto.textContent = 'Seu acesso está ativo. A administração de usuários é exclusiva de administradores.';
+      this.conteudo.replaceChildren(titulo, texto);
+    }
   }
 }
-
-new AplicacaoRenderer().iniciar();
+void new AplicacaoRenderer().iniciar();

@@ -7,7 +7,7 @@ type Igual<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;
 export type LimitesAutenticacao42 = [
   Exigir<AutenticacaoService extends Pick<ContratoAutenticacaoService, 'entrar'> ? true : false>,
   Exigir<HashSenhaArgon2 extends ContratoHashSenha ? true : false>,
-  Exigir<Igual<keyof AutenticacaoService, 'entrar'>>,
+  Exigir<Igual<keyof AutenticacaoService, 'entrar' | 'verificarCredenciais'>>,
   Exigir<Igual<keyof ConstructorParameters<typeof import('../src/services/AutenticacaoService').AutenticacaoService>[0], 'dados' | 'hash'>>,
   Exigir<Igual<Pick<DependenciasAutenticacao, 'dados' | 'hash'>['hash'], ContratoHashSenha>>
 ];

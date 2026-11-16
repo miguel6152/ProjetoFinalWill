@@ -1,4 +1,4 @@
-import type { ContextoSessao, ContratoAutenticacaoService } from '../main/seguranca/ContratosAutenticacao';
+import type { ContextoSessao, ContratoAutenticacaoService, IdentidadeAutenticada } from '../main/seguranca/ContratosAutenticacao';
 import type { UsuarioSessao } from '../shared/tipos/Autenticacao';
 import { SessaoManager } from '../main/seguranca/SessaoManager';
 import { Autorizador } from '../main/seguranca/Autorizador';
@@ -10,7 +10,7 @@ export class SessaoAutenticacaoService implements ContratoAutenticacaoService {
   private readonly pendentes = new Set<number>();
 
   public constructor(private readonly credenciais: {
-    entrar(entrada: unknown, contexto: ContextoSessao): Promise<UsuarioSessao>;
+    verificarCredenciais(entrada: unknown, contexto: ContextoSessao): Promise<IdentidadeAutenticada>;
   },
     private readonly sessoes: SessaoManager, private readonly autorizador: Autorizador) {}
 
@@ -22,9 +22,9 @@ export class SessaoAutenticacaoService implements ContratoAutenticacaoService {
     const versao = this.sessoes.versao(contexto);
     this.pendentes.add(id);
     try {
-      const usuario = await this.credenciais.entrar(credenciais, contexto);
+      const usuario = await this.credenciais.verificarCredenciais(credenciais, contexto);
       this.sessoes.conferir(contexto, versao);
-      this.sessoes.estabelecer(contexto, usuario.id);
+      this.sessoes.estabelecer(contexto, usuario.id, usuario.identidadeConta, usuario.versaoCredencial);
       return await this.obterSessao(contexto);
     } catch (erro: unknown) {
       // Não apagar uma sessão posterior quando uma operação antiga terminar.

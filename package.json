@@ -23,7 +23,11 @@
     "test:auth-banco": "npm run build && electron dist/tools/VerificarAutenticacaoBanco.js",
     "test:sessoes": "npm run build && node dist/tools/VerificarSessoes.js",
     "test:auth-ipc": "npm run build && electron dist/tools/VerificarAutenticacaoIpc.js",
-    "test:auth-seguranca": "npm run build && electron dist/tools/VerificarSegurancaAutenticacao.js"
+    "test:auth-seguranca": "npm run build && electron dist/tools/VerificarSegurancaAutenticacao.js",
+    "test:usuarios": "npm run build && electron dist/tools/VerificarUsuarios.js",
+    "test:inicializacao": "npm run build && electron dist/tools/VerificarProvisionamento.js",
+    "test:politicas": "npm run build && electron dist/tools/VerificarPoliticasSeguranca.js",
+    "test:interface": "npm run build && electron dist/tools/VerificarInterfaceAdministrativa.js"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

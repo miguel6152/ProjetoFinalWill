@@ -9,7 +9,7 @@ type Exigir<T extends true> = T;
 export type PortasAutenticacao = [
   Exigir<Igual<ReturnType<ContratoDadosAutenticacao['buscarPorEmail']>, Promise<DadosAutenticacao | undefined>>>,
   Exigir<Igual<ReturnType<ContratoDadosAutenticacao['buscarIdentidadePorId']>, Promise<IdentidadeAutenticada | undefined>>>,
-  Exigir<Igual<keyof IdentidadeAutenticada, 'id' | 'nome' | 'perfil' | 'ativo'>>,
+  Exigir<Igual<keyof IdentidadeAutenticada, 'id' | 'nome' | 'perfil' | 'ativo' | 'identidadeConta' | 'versaoCredencial'>>,
   Exigir<Igual<ReturnType<ContratoHashSenha['verificar']>, Promise<boolean>>>,
   Exigir<Igual<ReturnType<ContratoHashSenha['gerar']>, Promise<string>>>,
   Exigir<Igual<ReturnType<ContratoHashSenha['necessitaAtualizacao']>, boolean>>,
@@ -22,7 +22,8 @@ export type ContratosAutenticacao = [
   Exigir<Igual<Perfil, 'admin' | 'recepcao' | 'instrutor'>>,
   Exigir<Igual<keyof CredenciaisEntrada, 'email' | 'senha'>>,
   Exigir<Igual<keyof UsuarioSessao, 'id' | 'nome' | 'perfil'>>,
-  Exigir<Igual<keyof SessaoInterna, 'usuarioId' | 'criadaEm'>>,
+  Exigir<'identidadeConta' extends keyof UsuarioSessao ? false : true>,
+  Exigir<Igual<keyof SessaoInterna, 'usuarioId' | 'criadaEm' | 'identidadeConta' | 'versaoCredencial'>>,
   Exigir<Igual<ContratoIpc['auth:entrar'], { entrada: { email: string; senha: string }; saida: { usuario: UsuarioSessao } }>>,
   Exigir<Igual<ContratoIpc['auth:sessao'], { entrada: undefined; saida: { usuario: UsuarioSessao } }>>,
   Exigir<Igual<ContratoIpc['auth:sair'], { entrada: undefined; saida: { encerrada: true } }>>,
@@ -30,7 +31,7 @@ export type ContratosAutenticacao = [
   Exigir<Igual<Parameters<ContratoAutenticacaoService['entrar']>, [CredenciaisEntrada, ContextoSessao]>>,
   Exigir<Igual<ReturnType<ContratoAutenticacaoService['obterSessao']>, Promise<UsuarioSessao>>>,
   Exigir<Igual<ReturnType<ContratoAutenticacaoService['sair']>, void>>,
-  Exigir<Igual<Parameters<ContratoSessaoManager['estabelecer']>, [ContextoSessao, number]>>,
+  Exigir<Igual<Parameters<ContratoSessaoManager['estabelecer']>, [ContextoSessao, number, string, number]>>,
   Exigir<Igual<ReturnType<ContratoSessaoManager['encerrar']>, void>>,
   Exigir<Igual<ReturnType<ContratoSessaoManager['encerrarTodas']>, void>>,
   Exigir<Igual<ReturnType<ContratoSessaoManager['obter']>, Readonly<SessaoInterna> | undefined>>

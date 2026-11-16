@@ -5,6 +5,8 @@ import { ErroAutenticacao } from '../main/seguranca/ErroAutenticacao';
 import { ValidacaoAutenticacao } from './ValidacaoAutenticacao';
 
 export class HashSenhaArgon2 implements ContratoHashSenha {
+  private static concorrentes = 0;
+  private static readonly maximoConcorrentes = 4;
   public constructor(private readonly biblioteca: Pick<typeof argon2, 'hash' | 'verify' | 'needsRehash'> = argon2) {}
 
   private readonly opcoes = Object.freeze({
@@ -17,8 +19,9 @@ export class HashSenhaArgon2 implements ContratoHashSenha {
     if (!entrada.success) throw new ErroAutenticacao('VALIDACAO');
     try {
       // node-argon2 gera salt criptográfico aleatório de 16 bytes por chamada.
-      return await this.biblioteca.hash(entrada.data, this.opcoes);
-    } catch {
+      return await this.executar(() => this.biblioteca.hash(entrada.data, this.opcoes));
+    } catch (erro: unknown) {
+      if (erro instanceof ErroAutenticacao && erro.codigo === 'SEM_PERMISSAO') throw erro;
       throw new ErroAutenticacao('INTERNO');
     }
   }
@@ -29,8 +32,9 @@ export class HashSenhaArgon2 implements ContratoHashSenha {
     if (!this.hashAceitavel(hashCodificado)) return false;
     try {
       // A biblioteca verifica o hash e usa comparação resistente a diferenças de tempo.
-      return await this.biblioteca.verify(hashCodificado, entrada.data);
-    } catch {
+      return await this.executar(() => this.biblioteca.verify(hashCodificado, entrada.data));
+    } catch (erro: unknown) {
+      if (erro instanceof ErroAutenticacao && erro.codigo === 'SEM_PERMISSAO') throw erro;
       // Um PHC estruturalmente aceito que falha na biblioteca é erro interno.
       throw new ErroAutenticacao('INTERNO');
     }
@@ -46,6 +50,13 @@ export class HashSenhaArgon2 implements ContratoHashSenha {
     } catch {
       throw new ErroAutenticacao('INTERNO');
     }
+  }
+
+  private async executar<T>(operacao: () => Promise<T>): Promise<T> {
+    if (HashSenhaArgon2.concorrentes >= HashSenhaArgon2.maximoConcorrentes) throw new ErroAutenticacao('SEM_PERMISSAO');
+    HashSenhaArgon2.concorrentes++;
+    try { return await operacao(); }
+    finally { HashSenhaArgon2.concorrentes--; }
   }
 
   /** Limita recursos antes de entregar parâmetros PHC à biblioteca nativa.

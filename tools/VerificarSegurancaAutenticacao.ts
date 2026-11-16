@@ -6,9 +6,14 @@ import { app, BrowserWindow } from 'electron';
 import { Conexao } from '../src/database/Conexao';
 import { Migrador } from '../src/database/Migrador';
 import { Migracao001EstruturaInicial } from '../src/database/migrations/Migracao001EstruturaInicial';
+import { Migracao002IdentidadeConta } from '../src/database/migrations/Migracao002IdentidadeConta';
+import { Migracao003VersaoCredencial } from '../src/database/migrations/Migracao003VersaoCredencial';
 import { Composicao } from '../src/main/Composicao';
 import { JanelaPrincipal } from '../src/main/JanelaPrincipal';
 import { AutenticacaoHandler } from '../src/main/ipc/AutenticacaoHandler';
+import { InicializacaoHandler } from '../src/main/ipc/InicializacaoHandler';
+import { ProvisionamentoService } from '../src/services/ProvisionamentoService';
+import { UsuarioRepository } from '../src/repositories/UsuarioRepository';
 import { Autorizador } from '../src/main/seguranca/Autorizador';
 import { SessaoManager } from '../src/main/seguranca/SessaoManager';
 import { ErroAutenticacao } from '../src/main/seguranca/ErroAutenticacao';
@@ -36,6 +41,7 @@ class VerificarSegurancaAutenticacao {
       app.exit(1);
     }, 60000);
     let handler: AutenticacaoHandler | undefined;
+    let inicializacao: InicializacaoHandler | undefined;
     let conexao: Conexao | undefined;
     try {
       await app.whenReady();
@@ -75,6 +81,7 @@ class VerificarSegurancaAutenticacao {
       const autorizador = new Autorizador(sessoes, dados);
       const servico = new SessaoAutenticacaoService(new AutenticacaoService({ dados, hash }), sessoes, autorizador);
       handler = new AutenticacaoHandler(servico, sessoes);
+      inicializacao = new InicializacaoHandler(new ProvisionamentoService(new UsuarioRepository(conexao), hashReal), handler, sessoes);
       const a = await this.abrir(handler);
       const b = await this.abrir(handler);
       const contextoA = { webContentsId: a.webContents.id };
@@ -159,6 +166,7 @@ class VerificarSegurancaAutenticacao {
       this.falha(await this.entrar(a, this.entrada), 'INTERNO');
       assert.equal(sessoes.obter(contextoA), undefined);
       handler.encerrar();
+      inicializacao.encerrar(); inicializacao = undefined;
       handler = undefined;
       this.ok('banco fechado: login, consulta e logout falham com INTERNO sem autenticar ou mascarar erros');
 
@@ -169,6 +177,7 @@ class VerificarSegurancaAutenticacao {
       app.exit(0);
     } catch (erro: unknown) {
       handler?.encerrar();
+      inicializacao?.encerrar();
       conexao?.fechar();
       for (const janela of this.janelas) if (!janela.isDestroyed()) janela.destroy();
       clearTimeout(limite);
@@ -178,7 +187,7 @@ class VerificarSegurancaAutenticacao {
   }
 
   private preparar(conexao: Conexao, digest: string): void {
-    new Migrador(conexao, [new Migracao001EstruturaInicial()]).executar();
+    new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
     const inserir = conexao.preparar<[string, string, string, string, number], never>(
       `INSERT INTO usuarios (nome, email, senha_hash, perfil, ativo, criado_em, atualizado_em)
        VALUES (?, ?, ?, ?, ?, '2026-11-14', '2026-11-14')`);
@@ -228,8 +237,8 @@ class VerificarSegurancaAutenticacao {
       congelada: Object.isFrozen(window.academia) && Object.isFrozen(window.academia.autenticacao),
       require: typeof window.require, process: typeof window.process, ipc: typeof window.ipcRenderer,
       invoke: typeof window.academia.invoke, usuarios: typeof window.academia.usuarios
-    })`), { capacidades: ['autenticacao'], metodos: ['entrar', 'sessao', 'sair'], congelada: true,
-      require: 'undefined', process: 'undefined', ipc: 'undefined', invoke: 'undefined', usuarios: 'undefined' });
+    })`), { capacidades: ['autenticacao', 'usuarios', 'inicializacao'], metodos: ['entrar', 'sessao', 'sair'], congelada: true,
+      require: 'undefined', process: 'undefined', ipc: 'undefined', invoke: 'undefined', usuarios: 'object' });
     const negada = await new JanelaPrincipal().abrir(false);
     this.janelas.push(negada);
     const origem = await this.abrir(handler);

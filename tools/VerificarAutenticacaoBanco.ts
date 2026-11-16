@@ -4,6 +4,8 @@ import { Composicao } from '../src/main/Composicao';
 import { Conexao } from '../src/database/Conexao';
 import { Migrador } from '../src/database/Migrador';
 import { Migracao001EstruturaInicial } from '../src/database/migrations/Migracao001EstruturaInicial';
+import { Migracao002IdentidadeConta } from '../src/database/migrations/Migracao002IdentidadeConta';
+import { Migracao003VersaoCredencial } from '../src/database/migrations/Migracao003VersaoCredencial';
 import { ConsultaAutenticacaoRepository } from '../src/repositories/ConsultaAutenticacaoRepository';
 import { ErroAutenticacao } from '../src/main/seguranca/ErroAutenticacao';
 import { AutenticacaoService } from '../src/services/AutenticacaoService';
@@ -20,7 +22,7 @@ class VerificarAutenticacaoBanco {
       await app.whenReady();
       await new VerificarAutenticacao().executar();
       conexao = new Conexao(':memory:');
-      new Migrador(conexao, [new Migracao001EstruturaInicial()]).executar();
+      new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
       const hash = new HashSenhaArgon2();
       const senha = 'Senha sintética de integração 🔒';
       const digest = await hash.gerar(senha);
@@ -33,7 +35,9 @@ class VerificarAutenticacaoBanco {
       const dados = new ConsultaAutenticacaoRepository(conexao);
       const servico = new AutenticacaoService({ dados, hash });
       assert.equal((await dados.buscarPorEmail('pessoa@example.invalid'))?.senhaHash, digest);
-      assert.deepEqual(await dados.buscarIdentidadePorId(1), { id: 1, nome: 'Pessoa', perfil: 'admin', ativo: true });
+      const identidadeConta = conexao.preparar<[], { identidade_conta: string }>('SELECT identidade_conta FROM usuarios WHERE id = 1').get()?.identidade_conta;
+      assert.match(identidadeConta ?? '', /^[0-9a-f]{32}$/);
+      assert.deepEqual(await dados.buscarIdentidadePorId(1), { id: 1, nome: 'Pessoa', perfil: 'admin', ativo: true, identidadeConta, versaoCredencial: 1 });
       assert.equal(await dados.buscarPorEmail("' OR 1=1 --"), undefined);
       assert.equal(await dados.buscarIdentidadePorId(9999), undefined);
       const saida = await servico.entrar({ email: ' PESSOA@EXAMPLE.INVALID ', senha }, { webContentsId: 1 });

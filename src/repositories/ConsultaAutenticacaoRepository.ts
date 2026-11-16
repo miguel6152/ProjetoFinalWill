@@ -25,11 +25,12 @@ export class ConsultaAutenticacaoRepository extends BaseRepository<RegistroUsuar
 
   public async buscarPorEmail(emailNormalizado: string): Promise<DadosAutenticacao | undefined> {
     try {
-      const linha = this.conexao.preparar<[string], Pick<RegistroUsuarioAutenticacao, 'id' | 'nome' | 'perfil' | 'ativo' | 'senha_hash'>>(
-        'SELECT id, nome, perfil, ativo, senha_hash FROM usuarios WHERE email = ?'
+      const linha = this.conexao.preparar<[string], Pick<RegistroUsuarioAutenticacao, 'id' | 'nome' | 'perfil' | 'ativo' | 'senha_hash'> & { identidade_conta: string; versao_credencial: number }>(
+        'SELECT id, nome, perfil, ativo, senha_hash, identidade_conta, versao_credencial FROM usuarios WHERE email = ?'
       ).get(emailNormalizado);
       if (linha === undefined) return undefined;
-      return { id: linha.id, nome: linha.nome, perfil: linha.perfil, ativo: linha.ativo === 1, senhaHash: linha.senha_hash };
+      return { id: linha.id, nome: linha.nome, perfil: linha.perfil, ativo: linha.ativo === 1,
+        senhaHash: linha.senha_hash, identidadeConta: linha.identidade_conta, versaoCredencial: linha.versao_credencial };
     } catch {
       throw new ErroRepository('INTERNO');
     }
@@ -38,11 +39,12 @@ export class ConsultaAutenticacaoRepository extends BaseRepository<RegistroUsuar
   public async buscarIdentidadePorId(usuarioId: number): Promise<IdentidadeAutenticada | undefined> {
     if (!Number.isSafeInteger(usuarioId) || usuarioId < 1) throw new ErroRepository('ENTRADA_INVALIDA');
     try {
-      const linha = this.conexao.preparar<[number], Pick<RegistroUsuarioAutenticacao, 'id' | 'nome' | 'perfil' | 'ativo'>>(
-        'SELECT id, nome, perfil, ativo FROM usuarios WHERE id = ?'
+      const linha = this.conexao.preparar<[number], Pick<RegistroUsuarioAutenticacao, 'id' | 'nome' | 'perfil' | 'ativo'> & { identidade_conta: string; versao_credencial: number }>(
+        'SELECT id, nome, perfil, ativo, identidade_conta, versao_credencial FROM usuarios WHERE id = ?'
       ).get(usuarioId);
       if (linha === undefined) return undefined;
-      return { id: linha.id, nome: linha.nome, perfil: linha.perfil, ativo: linha.ativo === 1 };
+      return { id: linha.id, nome: linha.nome, perfil: linha.perfil, ativo: linha.ativo === 1,
+        identidadeConta: linha.identidade_conta, versaoCredencial: linha.versao_credencial };
     } catch {
       throw new ErroRepository('INTERNO');
     }

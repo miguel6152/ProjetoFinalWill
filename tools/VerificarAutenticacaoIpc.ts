@@ -5,6 +5,8 @@ import { Composicao } from '../src/main/Composicao';
 import { Conexao } from '../src/database/Conexao';
 import { Migrador } from '../src/database/Migrador';
 import { Migracao001EstruturaInicial } from '../src/database/migrations/Migracao001EstruturaInicial';
+import { Migracao002IdentidadeConta } from '../src/database/migrations/Migracao002IdentidadeConta';
+import { Migracao003VersaoCredencial } from '../src/database/migrations/Migracao003VersaoCredencial';
 import { ConsultaAutenticacaoRepository } from '../src/repositories/ConsultaAutenticacaoRepository';
 import { HashSenhaArgon2 } from '../src/services/HashSenhaArgon2';
 import { AutenticacaoService } from '../src/services/AutenticacaoService';
@@ -12,6 +14,9 @@ import { SessaoAutenticacaoService } from '../src/services/SessaoAutenticacaoSer
 import { SessaoManager } from '../src/main/seguranca/SessaoManager';
 import { Autorizador } from '../src/main/seguranca/Autorizador';
 import { AutenticacaoHandler } from '../src/main/ipc/AutenticacaoHandler';
+import { InicializacaoHandler } from '../src/main/ipc/InicializacaoHandler';
+import { ProvisionamentoService } from '../src/services/ProvisionamentoService';
+import { UsuarioRepository } from '../src/repositories/UsuarioRepository';
 import type { Resultado } from '../src/shared/ipc/ContratoIpc';
 import type { ContratoDadosAutenticacao, IdentidadeAutenticada } from '../src/main/seguranca/ContratosAutenticacao';
 
@@ -22,12 +27,13 @@ class VerificarAutenticacaoIpc {
   public async executar(): Promise<void> {
     const limite = setTimeout(() => app.exit(1), 60000);
     let handler: AutenticacaoHandler | undefined;
+    let inicializacao: InicializacaoHandler | undefined;
     let conexao: Conexao | undefined;
     const composicao = new Composicao();
     try {
       await app.whenReady();
       conexao = new Conexao(':memory:');
-      new Migrador(conexao, [new Migracao001EstruturaInicial()]).executar();
+      new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
       const hash = new HashSenhaArgon2();
       const senha = 'Sintética IPC 🔒';
       const digest = await hash.gerar(senha);
@@ -52,11 +58,12 @@ class VerificarAutenticacaoIpc {
       const sessoes = new SessaoManager();
       const verificador = new AutenticacaoService({ dados, hash });
       let aguardar: Promise<void> | undefined;
-      const servico = new SessaoAutenticacaoService({ entrar: async (entrada, contexto) => {
+      const servico = new SessaoAutenticacaoService({ verificarCredenciais: async (entrada, contexto) => {
         await aguardar;
-        return verificador.entrar(entrada, contexto);
+        return verificador.verificarCredenciais(entrada, contexto);
       } }, sessoes, new Autorizador(sessoes, dadosAutorizacao));
       handler = new AutenticacaoHandler(servico, sessoes);
+      inicializacao = new InicializacaoHandler(new ProvisionamentoService(new UsuarioRepository(conexao), hash), handler, sessoes);
       const seguro = handler;
       const janela = await this.abrir(seguro);
       const outra = await this.abrir();
@@ -75,7 +82,7 @@ class VerificarAutenticacaoIpc {
       assert.deepEqual(await janela.webContents.executeJavaScript('window.academia.autenticacao.sessao()'), esperado);
       this.falha(await seguro.atender('auth:sessao', evento, [{ usuarioId: 1 }]), 'VALIDACAO');
       const ponte = await janela.webContents.executeJavaScript(`({chaves:Object.keys(window.academia), metodos:Object.keys(window.academia.autenticacao), require:typeof window.require, process:typeof window.process})`);
-      assert.deepEqual(ponte, { chaves: ['autenticacao'], metodos: ['entrar', 'sessao', 'sair'], require: 'undefined', process: 'undefined' });
+      assert.deepEqual(ponte, { chaves: ['autenticacao', 'usuarios', 'inicializacao'], metodos: ['entrar', 'sessao', 'sair'], require: 'undefined', process: 'undefined' });
       conexao.preparar<[], never>("UPDATE usuarios SET perfil = 'instrutor' WHERE id = 1").run();
       const atualizado = await janela.webContents.executeJavaScript('window.academia.autenticacao.sessao()');
       assert.deepEqual(atualizado, { sucesso: true, dados: { usuario: { id: 1, nome: 'Sintético', perfil: 'instrutor' } } });
@@ -124,6 +131,7 @@ class VerificarAutenticacaoIpc {
       this.falha(await final.webContents.executeJavaScript('window.academia.autenticacao.sessao()'), 'INTERNO');
       assert.equal(sessoes.obter({ webContentsId: final.webContents.id }), undefined);
       seguro.encerrar();
+      inicializacao.encerrar(); inicializacao = undefined;
       handler = undefined;
       // Exercita também a montagem efetiva usada pela aplicação.
       composicao.iniciar(':memory:');
@@ -138,6 +146,7 @@ class VerificarAutenticacaoIpc {
     } catch (erro: unknown) {
       clearTimeout(limite);
       handler?.encerrar();
+      inicializacao?.encerrar();
       composicao.encerrar();
       conexao?.fechar();
       for (const j of this.janelas) if (!j.isDestroyed()) j.destroy();
@@ -201,6 +210,8 @@ class VerificarAutenticacaoIpc {
     // Respostas de logout antigo, tanto sucesso de leitura quanto falha operacional.
     for (const falhaTardia of [false, true]) {
       assert.deepEqual(await a.webContents.executeJavaScript(loginA), sessaoA);
+      const identidadeAntiga = sessoes.obter(contextoA)?.identidadeConta;
+      assert.ok(identidadeAntiga !== undefined);
       const consulta = this.suspenderConsulta();
       const eventoAntigo = { sender: a.webContents, senderFrame: a.webContents.mainFrame };
       const logoutAntigo = handler.atender('auth:sair', eventoAntigo, []);
@@ -210,7 +221,7 @@ class VerificarAutenticacaoIpc {
       const nova = sessoes.obter(contextoA);
       const versaoNova = sessoes.versao(contextoA);
       if (falhaTardia) consulta.falhar(new Error('SEGREDO_INTERNO senha_hash SQL'));
-      else consulta.concluir({ ...usuarioA, perfil: 'instrutor', ativo: true });
+      else consulta.concluir({ ...usuarioA, perfil: 'instrutor', ativo: true, identidadeConta: identidadeAntiga, versaoCredencial: 1 });
       this.falha(await logoutAntigo, falhaTardia ? 'INTERNO' : 'NAO_AUTENTICADO');
       assert.strictEqual(sessoes.obter(contextoA), nova, 'Logout antigo modificou a sessão posterior.');
       assert.strictEqual(sessoes.versao(contextoA), versaoNova);

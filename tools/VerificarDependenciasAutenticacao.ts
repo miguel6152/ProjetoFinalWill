@@ -19,7 +19,7 @@ class VerificarDependenciasAutenticacao {
         const nome = referencia[1];
         assert.ok(nome !== undefined);
         if (!nome.startsWith('.')) continue;
-        const destino = path.resolve(path.dirname(arquivo), `${nome}.ts`);
+        const destino = path.resolve(path.dirname(arquivo), `${nome.replace(/\.js$/, '')}.ts`);
         assert.ok(fs.existsSync(destino), `Import local não resolvido: ${arquivo}: ${nome}`);
         destinos.push(destino);
       }

@@ -1,5 +1,9 @@
 # Autenticação e sessão — subetapas 4.1, 4.2, 4.3 e 4.4
 
+**Estado atual:** CRUD administrativo com interface, login/logout, provisionamento inicial, expiração, limites e revogação persistente de credencial implementados na rodada de encerramento. A seção final de encerramento e ENCERRAMENTO.md substituem afirmações históricas de funcionalidade pendente. A compatibilidade do ambiente é registrada por execução: não se presume Node global 24 apenas por um registro anterior.
+
+Atualização 5.2: a seção final de correção substitui a associação somente por usuarioId e a revogação apenas por consulta descritas no histórico. Há migration aditiva de identidade persistente, revogação local após commit e proteção de operações pendentes.
+
 As seções da 4.1 e da 4.2 preservam o histórico, inclusive a previsão original de bcrypt e os bloqueios já superados. A 4.2 usa Argon2id. A seção da 4.3 registra a implementação de sessões/IPC e suas correções. A seção final da 4.4 reúne a validação integrada atual e as ressalvas que permanecem.
 
 A subetapa 4.1 define contratos, não executa login. Mantém os nomes futuros AutenticacaoService, SessaoManager e Autorizador. Naquela subetapa não há classes simulando esses componentes, hash real, armazenamento de sessões, handlers novos ou capacidades novas no preload.
@@ -295,3 +299,104 @@ Node global 24.22.3; Electron 45.3.2 com Node 24.22.2; SQLite 3.54.1 e better-sq
 | `git diff --check` | Aprovado; apenas avisos de conversão LF para CRLF |
 
 As tentativas iniciais de preparação da suíte expuseram suposições incorretas do teste sobre uma API de preferências não disponível, o agendamento da navegação e o encerramento automático após fechar todas as janelas. Foram ajustados os testes para a API tipada disponível, resposta antes de iniciar a navegação e ciclo de vida correto das fixtures. Nenhuma proteção da produção ou teste anterior foi removido para obter aprovação.
+
+## Etapa 5 — CRUD administrativo de usuários (entrega inicial; atualizada no encerramento)
+
+Implementação restrita à frente de Miguel: UsuarioRepository, UsuarioService, ValidacaoUsuario, ErroUsuario e UsuarioHandler. Na correção 5.2, ConsultaAutenticacaoRepository, AutenticacaoService, SessaoAutenticacaoService, Autorizador e SessaoManager também passaram a transportar e conferir a identidade persistente interna. AutenticacaoHandler disponibiliza ao outro handler do Main sua validação de contexto já existente, sem expô-la ao Renderer, preservando as guardas de logout, geração e revogação tardia corrigidas na 4.3.
+
+Composicao monta o serviço sobre a mesma conexão e sessões existentes e remove handlers administrativos antes de encerrar a autenticação/banco. Preload publica usuarios.criar/listar/obter/atualizar/excluir/alterarSenha, em objeto congelado, sem canal genérico. A autorização admin é obrigatória no Main para os seis canais; recepcao e instrutor são negados. A nova capacidade exigiu apenas ampliar as expectativas das três suítes anteriores da ponte e a união estática de canais, sem remover cenários ou asserções de segurança.
+
+Os contratos anteriores de criar/listar/obter/excluir são preservados. usuarios:atualizar passa a usar Partial<Omit<NovoUsuario, 'senha'>>: alteração deliberada para impedir redefinição de senha por mass assignment. O novo usuarios:alterar-senha recebe { id, senha } e retorna UsuarioDto, exclusivamente para redefinição administrativa autorizada. Não existe recuperação pública, tela ou novo fluxo de autosserviço.
+
+| Requisito | Implementação | Evidência e critério de aprovação |
+|---|---|---|
+| Criar | Validação estrita, normalização de nome/email, HashSenhaArgon2 e create herdado | IPC cria linha real; PHC verifica senha e difere de texto puro; DTO não contém segredo |
+| Ler | obterPublico/listarPublico, paginação 1–100, id ASC e busca literal parametrizada por nome/email | Consulta individual, páginas vazia/excedente, filtro e texto semelhante a injeção; nenhum hash selecionado |
+| Atualizar | Patch explícito sem senha/hash/campos internos; omitidos preservados | Nome, email e perfil alterados; duplicidade e patch vazio/extra rejeitados |
+| Redefinir senha | Canal próprio, mesmo contrato técnico de senha da autenticação e Argon2id | Hash anterior não confere; login IPC rejeita senha anterior e aceita a nova |
+| Excluir | Autoexclusão bloqueada; RESTRICT preservado | Usuário sem vínculo é removido, consulta posterior não encontra e sessão perde acesso; vínculo de instrutor retorna CONFLITO |
+| Último admin | Leitura do ator, contagem e mutação dentro de IMMEDIATE | Rebaixar/desativar último admin é negado; duas janelas com admins distintos desativando a si próprios deixam exatamente um ativo, independentemente da ordem |
+| Origem e sessão | Guarda do Main, geração e referência de sessão antes da operação atômica | Seis canais negam origem/frame/subframe inválidos; logout com sessão substituta, navegação/destruição e perda de privilégio durante hash não gravam |
+| Falhas | Resultado público com código/mensagem fixos | Hash com falha injetada e SQLite realmente fechado não vazam SQL/stack e não deixam criação indevida |
+| Persistência/composição | Migration de produção, arquivo temporário e Composicao real | Fechar/reabrir mantém dados; nova janela usa auth e CRUD pela ponte efetiva |
+
+`npm run test:usuarios` executa a nova suíte em Electron, SQLite em arquivo temporário e Argon2id reais, com sete grupos. Nenhum banco existente de userData é aberto. A suíte fecha conexões e janelas e remove somente arquivos conhecidos de seu diretório temporário, sem remoção recursiva. Pausas determinísticas e falha de hash são instrumentação de testes; os casos positivos não simulam banco, IPC ou criptografia. Os testes estáticos adicionais estão em tools/Usuarios.test-d.ts.
+
+Passaram nesta implementação: npm run typecheck; npm run build; npm audit (zero vulnerabilidades); test:usuarios; test:auth; test:auth-contratos; test:sessoes; test:auth-banco; test:auth-ipc; test:auth-seguranca; test:contratos; test:infra; test:banco; test:leituras; test:escritas. As regressões da 4.3 continuaram passando com suas asserções de identidade e geração. A primeira execução nova identificou uma fixture de duplicidade que reutilizava email já liberado; outra revelou a suposição incorreta sobre qual janela vence a corrida. Foram corrigidos os testes, mantendo a exigência de exatamente um admin ativo.
+
+Argon2id continua sendo a decisão autorizada da 4.2, substituindo bcrypt mencionado no planejamento inicial; a correção 5.2 acrescenta migration aditiva, sem trocar algoritmo ou dependências. Limites técnicos de senha não equivalem a política completa de força de senha. A redefinição não encerra globalmente sessões já abertas. Identidade/atividade/perfil são relidos; exclusão administrativa revoga as sessões locais da conta após commit, e desativação nega a próxima autorização. A identidade persistente também impede assumir outra conta que reutilize o ID. Não há expiração automática, limitação temporal, garantia completa contra força bruta/inundação IPC, tela de login/admin ou provisionamento inicial. Nenhum admin padrão foi criado. Um admin existente é pré-requisito do CRUD.
+
+Os outros nove CRUDs continuam sob responsabilidade dos respectivos colegas; esta entrega não os implementa nem os declara completos. A implementação está disponível para auditoria independente antes de qualquer consolidação em commit. Nenhuma operação de índice, commit ou push integra esta etapa de desenvolvimento.
+
+## Correção 5.2 — identidade de conta e revogação
+
+O teste novo foi executado antes da correção e falhou por sessão antiga assumir identidade substituta. Depois da correção, passa com reutilização efetiva do maior ID excluído pelo SQLite, sem AUTOINCREMENT. O ID público continua numérico; identidadeConta é exclusivamente interna e persistente na conta, armazenada também na sessão em memória. Não é senha nem token de acesso.
+
+Migracao002IdentidadeConta preenche usuarios.identidade_conta com valores aleatórios de 128 bits e índice único, e acrescenta triggers de geração automática/imutabilidade. A versão 1 publicada não foi alterada. A composição aplica 1 e 2. A camada de CRUD continua sem aceitar esse campo e os DTOs continuam sem expô-lo.
+
+O contrato interno IdentidadeAutenticada e SessaoInterna agora inclui identidadeConta; estabelecer exige o ID e a identidade. AutenticacaoService preserva entrar como projeção pública e acrescenta verificarCredenciais para o coordenador Main. Este último confere identidade antes/depois do hash. SessaoAutenticacaoService estabelece a sessão com a identidade verificada; a autorização final compara o token persistido. Mesmo se excluir/recriar ocorrer entre essas etapas, a sessão antiga não pode representar a conta substituta. Nenhuma assinatura dos canais IPC públicos mudou na 5.2.
+
+Na exclusão, UsuarioService captura a identidade confirmada dentro da transação e só a revoga após COMMIT bem-sucedido. A revogação percorre todas as sessões locais com aquela identidade e gira suas gerações. Não há await entre commit e revogação no event loop do Main. Falha de FK ou do próprio COMMIT preserva todas as sessões; sinais antigos não atingem sessões de outra identidade com o mesmo ID. Uma instância diferente não recebe o sinal local, mas a próxima autorização consulta o identificador persistido e rejeita a conta substituta.
+
+O ator administrativo precisa conservar sessão/generation e identidade persistente. O alvo de alteração é capturado antes de await e conferido novamente sob IMMEDIATE; hash de redefinição antiga não pode ser gravado em conta recriada. Operações já confirmadas antes de uma exclusão não são desfeitas retroativamente.
+
+| Evidência nova | Nível e resultado |
+|---|---|
+| A/B/F: ID reutilizado, duas sessões, troca admin/recepcao nos dois sentidos | IPC/preload/Electron com SQLite temporário e Argon2id reais; sessões revogadas, seis canais negados e novo login necessário |
+| C: consulta com sucesso/falha tardia e sinal antigo de revogação | Serviços reais, pausa controlada, SQLite temporário; referência e geração da sessão substituta preservadas |
+| D: FK e COMMIT recusados | SQLite real, inclusive FK adiada; conta e duas sessões mantidas |
+| E: login em hash, criação pelo ator excluído e redefinição sobre alvo substituído | Serviços reais e pausas controladas; nenhum login/escrita indevidos e conta substituta inalterada |
+| Outra conexão | Exclusão/recriação sem sinal local; identidade persistente rejeita sessão antiga e impede criação pendente pelo ator substituído, mesmo com sessão local inalterada |
+| Migration | Banco vazio pelas suítes integradas; upgrade da versão 1, rollback de falha, preservação de dados e identidade após reaplicar/fechar/reabrir; INSERT com identidade fornecida rejeitado |
+| A2: propriedade explicitamente undefined | Handler chamado diretamente com `{ nome: undefined }` e com outro campo válido no mesmo patch; propriedade própria conferida, VALIDACAO e registro inalterado, sem JSON.stringify no caminho de entrada |
+
+VerificarIdentidades é chamado por test:usuarios. O teste geral de banco mantém os casos da migration inicial e reaplica as duas versões no banco da composição. As fixtures de autenticação passaram a instalar versão 2; os testes de tipos e objetos internos incluem a nova identidade, preservando os DTOs públicos. As regressões completas da 4.3/4.4 continuam aprovadas, junto de todos os comandos exigidos na 5.2. A auditoria independente posterior continua necessária antes do commit.
+
+Retomada em 14/11/2026: todos os comandos exigidos foram executados novamente e observados com saída zero, incluindo os reforços acima. O relato anterior de teste falhando antes da correção foi encontrado na documentação; esta retomada não desfez a correção para reproduzir aquele estado. A relação exata de arquivos, evidências e ressalvas está em [ETAPA_5_2_REVISAO.md](ETAPA_5_2_REVISAO.md).
+
+## Etapa 5.3 — consistência da identidade do alvo
+
+A auditoria posterior encontrou um intervalo não coberto pelos testes 5.2: UsuarioService aguardava exigirPerfil antes de capturar a identidade do alvo. A proteção do solicitante não protegia esse alvo. Outra conexão podia excluir/recriar o registro durante a suspensão; a captura e a conferência final passavam a usar a identidade nova. Atualização, redefinição de senha e exclusão retornavam sucesso sobre a conta substituta. A conclusão histórica da revisão 5.2 não se aplica a esse cenário.
+
+UsuarioService agora prepara um vínculo interno imutável com ID e identidade persistente antes do primeiro await. A preparação inspeciona descritores e valida o ID sem executar getters. Erros de preparação são retidos até autorizar o solicitante, mantendo a prioridade de NAO_AUTENTICADO/SEM_PERMISSAO para chamadas sem permissão; essa leitura preliminar não autoriza a operação nem publica existência de conta. A validação completa do canal permanece obrigatória antes do hash ou da mutação. O vínculo não é recapturado depois da autorização ou do hash.
+
+Dentro da mesma transação IMMEDIATE, o serviço confere origem, geração e referência da sessão, identidade/atividade/perfil do solicitante e identidade persistente do alvo. Ausência inicial continua sendo ausência, mesmo se uma conta aparecer depois: NAO_ENCONTRADO. Remoção sem substituição também retorna NAO_ENCONTRADO. Identidade diferente retorna CONFLITO, sem modificar dados ou revogar sessões. A verificação e a mutação são síncronas sob a mesma reserva de escrita. Atualização/redefinição/exclusão usam esse único caminho; obter também usa o vínculo inicial. Criar e listar não têm alvo individual. Nenhum contrato IPC, DTO, hash ou migration foi alterado na 5.3.
+
+VerificarAlvosUsuarios, chamado por test:usuarios, inicia o handler real e imediatamente usa uma segunda conexão SQLite para substituir o alvo antes de retomar as microtasks. Autorizador, ConsultaAutenticacaoRepository e Argon2id são os de produção: não há adaptador de autorização lento, sleep ou dependência de temporização. Para cada um dos três canais, cobre troca de perfil nos dois sentidos, reutilização real do ID com identidade diferente, duas sessões da substituta preservadas por referência/geração, remoção antes/durante a chamada, conta que aparece após ausência inicial, operação normal e falha real no COMMIT por FK adiada. Os contextos das sessões novas são preparados diretamente pelo Main com a identidade real; login completo e corridas durante hash continuam cobertos pelas suítes anteriores. Último admin, autoexclusão e integridade também são conferidos.
+
+O novo teste foi executado antes da correção de produção e falhou em usuarios:atualizar com sucesso indevido sobre o alvo substituto. Após a correção, os três canais passam individualmente. A suíte mantém os testes A1/A2 anteriores. Essa evidência não equivale a uma nova auditoria independente da implementação 5.3.
+
+O vínculo começa na leitura síncrona do alvo ao receber a chamada no Main. Ele não identifica qual registro uma tela antiga exibiu antes de enviar a chamada, pois o contrato público continua recebendo ID numérico. Operações já confirmadas não são desfeitas retroativamente; os limites anteriores de sessões e conexões permanecem. A leitura preliminar do alvo pode ocorrer antes da confirmação do perfil, mas nenhum dado dela é devolvido a solicitante não autorizado.
+
+Validação final da 5.3: typecheck, build, test:usuarios (incluindo VerificarIdentidades/A1, A2 e VerificarAlvosUsuarios), test:auth, test:auth-banco, test:sessoes, test:auth-ipc, test:auth-seguranca, test:banco, test:leituras, test:escritas, test:infra, test:contratos e test:auth-contratos terminaram com código zero. npm audit retornou zero vulnerabilidades e git diff --check não apontou erros. A preparação do novo teste inicialmente exigiu tipagem explícita para corrigir TS7022; depois disso foi observada a falha de comportamento no código 5.2. Uma execução Electron posterior foi impedida por ACL do sandbox de execução antes das asserções e repetida com autorização fora desse sandbox, mantendo o sandbox do Electron e sem alterar ACLs. Não houve staging, commit, push, alteração das migrations ou acesso ao banco real de userData.
+
+## Encerramento — estado atual da frente do Miguel
+
+Esta seção substitui limitações históricas de interface, provisionamento, duração de sessão e ausência de revogação por senha. Não existe uma entrega histórica 5.4 comprovada; o trabalho foi organizado em correções de encerramento, documentadas em ENCERRAMENTO.md.
+
+### Credenciais e sessões
+
+Migracao003VersaoCredencial adiciona versao_credencial, iniciada em 1, com avanço por trigger a cada mudança real de senha_hash. Não altera a identidade imutável nem as migrations 001/002. ConsultaAutenticacaoRepository retorna essa versão somente à porta interna do Main. AutenticacaoService compara a versão capturada com a leitura pós-hash; SessaoManager armazena identidade e versão; Autorizador compara ambas. UsuarioService revalida também a versão do solicitante sob IMMEDIATE antes de gravar. Assim, um login ou uma criação pendente com credencial revogada não conserva acesso.
+
+Após commit da redefinição, revogarCredencial seleciona identidade exata e versões até a anterior: sinais antigos não encerram sessões com senha mais nova ou outra conta de mesmo ID. A versão persistente protege também contra alteração por outra conexão, sem broadcast; a leitura de autorização é o ponto de observação. Rollback preserva hash, versão e sessões. Os testes de A1/A2/A3 continuam obrigatórios.
+
+PoliticaSessao aplica 30 minutos de inatividade e oito horas de duração absoluta por padrão, rechecados também após suspensão assíncrona. Uso não prolonga a duração máxima. LimitadorLogin aplica 30 tentativas/minuto por janela, 120 por processo e quatro simultâneas, compartilhado com provisionamento na composição. HashSenhaArgon2 tem teto global de quatro operações nativas, incluindo operações administrativas, sem fila ilimitada. Saturação é SEM_PERMISSAO sanitizado. Não há bloqueio por email informado por terceiros. Configuração inválida é rejeitada no início tratado por Aplicacao, antes de abrir/migrar o banco.
+
+Novas senhas, criação, provisionamento e redefinição, exigem 15 caracteres Unicode, mantendo o limite de 1024 bytes, ausência de trim/truncamento e validação de surrogates. A contagem é por pontos de código. Login e verificação de hashes antigos preservam o contrato técnico anterior para não inutilizar contas existentes. O comprimento é uma escolha técnica apoiada na referência de fator único do [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html#passwordver), não declaração de conformidade integral ou garantia de força de toda senha.
+
+### Provisionamento e interface
+
+InicializacaoHandler publica somente inicializacao:estado e inicializacao:criar-admin. Origem, frame e geração são guardados antes e depois do hash. ProvisionamentoService valida nome/email/senha, força admin ativo e revalida banco completamente vazio sob IMMEDIATE; duas conexões não criam dois primeiros usuários. Qualquer usuário existente encerra o fluxo, mesmo sem admin ativo. Não é uma recuperação pública de conta, não há senha padrão e não há login automático após provisionamento.
+
+LoginTela e UsuariosTela usam apenas a ponte. O Main autoriza todas as operações independentemente da interface. Recepção/instrutor não recebem painel administrativo. Dados externos usam textContent/value, nunca HTML interpolado; nomes com marcação são exibidos como texto. Senhas são removidas dos formulários após uso. Logout e NAO_AUTENTICADO removem o painel; autorredefinição volta ao login. A consulta de sessão não é feita por polling que prolongaria artificialmente a inatividade. A interface não implementa os módulos dos colegas.
+
+### Evidências novas
+
+- test:inicializacao: formulário/canais estritos, origem, rollback, duas conexões concorrentes, admin único, persistência e cancelamento de documento/geração durante hash.
+- test:politicas: relógio controlado sem sleeps, prazo absoluto/inatividade, limites e recuperação, teto global de hashes, upgrade/rollback da 003, duas sessões revogadas, login antigo pendente, escrita por ator revogado, alteração por conexão externa, sinal antigo e falha real de commit.
+- test:interface: formulários reais → preload → IPC → services → arquivo SQLite; CRUD, busca, XSS como texto, senha nova, perfil negado no Main, último admin, logout, autorredefinição, reabertura e integridade.
+
+Execuções e classificações finais ficam em ENCERRAMENTO.md. Não se atribui nova aprovação a um teste que só tenha resultado histórico. A medição local de três ciclos Argon2id/hash+verificação é registrada na saída de test:politicas; não substitui avaliação na máquina de entrega.
+# Complemento do encerramento: identidade exibida
+
+A UI oficial envia a referência opaca recebida nos DTOs administrativos nos três canais de mutação do alvo. O Main valida o HMAC antes da suspensão e mantém a captura/revalidação transacional da Etapa 5.3. Assim, uma substituição anterior ao envio de um formulário também é recusada. Clientes legados que omitem `referencia` conservam apenas o vínculo à identidade existente na entrada no Main. `test:interface` substitui contas por outra conexão, comprova ID reutilizado e verifica linha completa e duas sessões novas nos três formulários.

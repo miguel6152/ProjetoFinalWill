@@ -7,6 +7,8 @@ import { Conexao } from '../src/database/Conexao';
 import { Migrador } from '../src/database/Migrador';
 import type { Migracao } from '../src/database/Migracao';
 import { Migracao001EstruturaInicial } from '../src/database/migrations/Migracao001EstruturaInicial';
+import { Migracao002IdentidadeConta } from '../src/database/migrations/Migracao002IdentidadeConta';
+import { Migracao003VersaoCredencial } from '../src/database/migrations/Migracao003VersaoCredencial';
 import { Composicao } from '../src/main/Composicao';
 import { VerificarMigrationsSincronas } from './VerificarMigrationsSincronas';
 
@@ -273,7 +275,7 @@ class VerificarBanco {
       const historico = conexao.preparar<[], unknown>('SELECT * FROM migrations').all();
       conexao.fechar();
       conexao = new Conexao(caminho);
-      new Migrador(conexao, [this.migracao]).executar();
+      new Migrador(conexao, [this.migracao, new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
       assert.deepEqual(conexao.preparar<[], unknown>('SELECT * FROM migrations').all(), historico);
       assert.equal(conexao.preparar<[], { nome: string }>('SELECT nome FROM planos WHERE id=1').get()?.nome, 'Persistente Fictício');
       assert.equal(conexao.preparar<[], { foreign_keys: number }>('PRAGMA foreign_keys').get()?.foreign_keys, 1);

@@ -1,5 +1,7 @@
 # BaseRepository — contratos, operações e integração (subetapas 3.1 a 3.4)
 
+**Nota de atualização:** as seções desta entrega registram o histórico da etapa 3. A autenticação e os repositories concretos de usuários foram implementados posteriormente. A base continua inalterada nesta rodada; seus limites de escalares, configuração confiável e commit externo são contratos técnicos, não promessas de implementar os nove módulos dos colegas. Estado atual em [ENCERRAMENTO.md](ENCERRAMENTO.md).
+
 As subetapas 3.1 (contratos), 3.2 (leituras) e 3.3 (escritas), incluindo os ajustes de suas auditorias, foram aprovadas. A subetapa 3.4 integra e verifica a Etapa 3 e aguarda revisão. Não foram implementados repositories de produção, autenticação, autorização, services ou canais novos. A Etapa 4 não foi iniciada. Nenhum commit da Etapa 3 está autorizado por esta entrega.
 
 ## Arquivos e responsabilidades

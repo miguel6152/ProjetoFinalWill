@@ -17,6 +17,8 @@ export interface UsuarioDto {
   ativo: number;
   criado_em: string;
   atualizado_em: string;
+  /** Referência opaca de edição; não é credencial nem identidade interna. */
+  referencia?: string;
 }
 export interface NovoUsuario {
   nome: string;
@@ -26,14 +28,17 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface ContratoIpc {
+  'inicializacao:estado': { entrada: undefined; saida: { necessario: boolean } };
+  'inicializacao:criar-admin': { entrada: { nome: string; email: string; senha: string }; saida: { criado: true } };
   'auth:entrar': { entrada: CredenciaisEntrada; saida: SaidaAutenticacao };
   'auth:sessao': { entrada: undefined; saida: SaidaAutenticacao };
   'auth:sair': { entrada: undefined; saida: SaidaLogout };
   'usuarios:criar': { entrada: NovoUsuario; saida: UsuarioDto };
   'usuarios:listar': { entrada: EntradaLista; saida: Pagina<UsuarioDto> };
   'usuarios:obter': { entrada: { id: number }; saida: UsuarioDto };
-  'usuarios:atualizar': { entrada: { id: number; alteracoes: Partial<NovoUsuario> }; saida: UsuarioDto };
-  'usuarios:excluir': { entrada: { id: number }; saida: { id: number; excluido: true } };
+  'usuarios:atualizar': { entrada: { id: number; referencia?: string; alteracoes: Partial<Omit<NovoUsuario, 'senha'>> }; saida: UsuarioDto };
+  'usuarios:alterar-senha': { entrada: { id: number; referencia?: string; senha: string }; saida: UsuarioDto };
+  'usuarios:excluir': { entrada: { id: number; referencia?: string }; saida: { id: number; excluido: true } };
 }
 export type MetodoIpc<C extends keyof ContratoIpc> =
   (entrada: ContratoIpc[C]['entrada']) => Promise<Resultado<ContratoIpc[C]['saida']>>;
@@ -41,6 +46,10 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Capacidades só serão expostas quando seus handlers seguros forem implementados.
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
+  readonly inicializacao?: {
+    readonly estado: MetodoIpc<'inicializacao:estado'>;
+    readonly criarAdministrador: MetodoIpc<'inicializacao:criar-admin'>;
+  };
   readonly autenticacao?: {
     readonly entrar: MetodoIpc<'auth:entrar'>;
     readonly sessao: MetodoIpc<'auth:sessao'>;
@@ -52,5 +61,6 @@ export interface PonteAcademia {
     readonly obter: MetodoIpc<'usuarios:obter'>;
     readonly atualizar: MetodoIpc<'usuarios:atualizar'>;
     readonly excluir: MetodoIpc<'usuarios:excluir'>;
+    readonly alterarSenha: MetodoIpc<'usuarios:alterar-senha'>;
   };
 }
