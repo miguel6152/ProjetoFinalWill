@@ -14,7 +14,7 @@ Correção 5.3: a identidade do alvo administrativo é capturada sincronamente a
 
 Fluxo de uma operação: **tela → preload → handler IPC → service → repository → SQLite**. Os models representam as entidades usadas pelas camadas. A dependência segue a organização model → repository → service → handler → tela; a tela nunca importa acesso ao banco ou bibliotecas do Node.
 
-O processo main cria conexão, repositories, services, sessão e handlers. O preload expõe métodos específicos e tipados. O renderer recebe apenas DTOs serializáveis, sem hashes, tokens ou objetos de conexão. A API Express fica no mesmo processo proprietário da conexão, escuta apenas em loopback e compartilha services de consulta. Seu consumo ocorre por HTTP no main, por meio de `RelatorioService`, preservando um consumo real da API própria.
+Na implementação atual da frente do Miguel, o processo main cria conexão, repositories, services, sessão e handlers de autenticação, usuários e inicialização. O preload expõe métodos específicos e tipados. O renderer recebe apenas DTOs serializáveis, sem hashes, tokens ou objetos de conexão. A API Express e o consumo de relatórios ainda são planejados, sob responsabilidade de Julio: o servidor deverá ficar no mesmo processo proprietário da conexão, escutar apenas em loopback e compartilhar services de consulta. Seu consumo deverá ocorrer por HTTP no main, por meio de `RelatorioService`, preservando o requisito de consumo real da API própria quando essa integração for implementada.
 
 ## 2. Modelo relacional
 
@@ -204,7 +204,7 @@ Nenhuma dessas pendências é resolvida pela regra de não negatividade ou pela 
 
 ## 3. Estrutura prevista de src/
 
-Os nomes abaixo são arquivos futuros, não criados por esta tarefa. Subpastas seguem domínio; cada classe fica em arquivo próprio. Arquivos de tipos e schemas exportam contratos e validações, sem funções soltas de negócio.
+A estrutura abaixo preserva o desenho originalmente previsto e reúne componentes já implementados e componentes planejados; não é um inventário exato dos arquivos atuais. Já existem a infraestrutura Electron, conexão e migrations, BaseRepository, autenticação e sessões, provisionamento inicial e CRUD administrativo de usuários com sua ponte e interface. Os módulos de negócio dos colegas, suas integrações e a API de relatórios permanecem planejados. O estado implementado e as validações estão registrados em `ENCERRAMENTO.md`. Subpastas seguem domínio; cada classe fica em arquivo próprio. Arquivos de tipos e schemas exportam contratos e validações, sem funções soltas de negócio.
 
 ```text
 src/
@@ -506,7 +506,7 @@ Usar credencial aleatória de curta duração associada à sessão, mantida apen
 
 ## 9. Decisões a validar e sequência de implementação
 
-Antes das respectivas funcionalidades, validar com o grupo: Telegram ou e-mail como provedor definitivo; antecedência do aviso; limiar de chuva; calendário de cobrança e parcelamento de planos trimestrais/anuais; sobreposição de matrículas; política de retenção e correção de pagamentos quitados; prazo de sessão; e a matriz proposta de permissões. Não presumir desconto, multa, bloqueio automático por inadimplência ou cancelamento por chuva.
+Antes das respectivas funcionalidades, validar com o grupo: Telegram ou e-mail como provedor definitivo; antecedência do aviso; limiar de chuva; calendário de cobrança e parcelamento de planos trimestrais/anuais; sobreposição de matrículas; política de retenção e correção de pagamentos quitados; e a matriz proposta de permissões. A expiração de sessões já está implementada no Main e testada por `test:politicas`: os padrões são 30 minutos de inatividade e oito horas de duração absoluta, configuráveis por `SESSAO_INATIVIDADE_MS` e `SESSAO_DURACAO_MAXIMA_MS`. O uso não prolonga o prazo absoluto. Eventuais ajustes desses parâmetros às necessidades da academia dependem de alinhamento com o grupo; não representam ausência do mecanismo técnico de expiração. Não presumir desconto, multa, bloqueio automático por inadimplência ou cancelamento por chuva.
 
 As decisões monetárias aprovadas e as questões financeiras ainda pendentes estão separadas na seção 2. A não negatividade e a permissão de valores zero estão aprovadas; a interpretação do preço por período, descontos/isenções individuais, créditos, pagamentos parciais, reembolsos e calendário de cobrança continuam pendentes de discussão com Davi e Vitor.
 
