@@ -5,7 +5,7 @@ Aplicação desktop em **Electron + TypeScript** para gerenciar uma academia de 
 
 > Status: em desenvolvimento.
 
-A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. Os módulos de alunos/planos/matrículas, financeiro/notificações, aulas/avaliações e as quatro integrações de API ainda dependem dos respectivos integrantes. Isso impede considerar o projeto completo pronto. A matriz e o histórico estão em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
+A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), integrado ao Electron, com permissões, CPF mascarado, formulários e testes. Planos/matrículas, financeiro/notificações, aulas/avaliações e as quatro integrações de API ainda dependem das próximas entregas. Isso impede considerar o projeto completo pronto. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
 
 ## Integrantes
 

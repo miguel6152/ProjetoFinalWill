@@ -42,6 +42,8 @@ Continuam pendentes, para discussão com o grupo, especialmente Davi e Vitor: pr
 
 ## Dados pessoais e de saúde
 
+Atualização do módulo de alunos: o CRUD agora valida entradas no Main, exige sessão/perfil por canal, mascara CPF na própria saída da listagem e restringe instrutores aos alunos de suas aulas/avaliações, projetando somente ID, nome e situação. Edição/exclusão validam uma referência opaca de concorrência sob transação; dados de notificações são preservados. Detalhes, testes e limites em [docs/ALUNOS.md](docs/ALUNOS.md). As pendências de retenção, auditoria e proteção do arquivo abaixo continuam válidas; avaliações físicas seguem fora desta entrega.
+
 CPF, contato, endereço e avaliações exigem minimização e acesso por necessidade. O schema prevê esses dados, mas as telas e services que irão coletá-los ainda não existem. A aplicação não oferece nesta etapa mascaramento, gestão de direitos do titular, auditoria de acesso ou política de retenção. Tais controles devem ser implementados nos respectivos módulos antes de uso com dados reais.
 
 SQLite com better-sqlite3 não cifra o arquivo automaticamente. Restringir acesso à conta/pasta do sistema operacional e proteger backups é necessário; nenhum controle de perfil da aplicação substitui proteção do arquivo local. Chaves estrangeiras protegem consistência, não confidencialidade.

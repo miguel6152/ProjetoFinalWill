@@ -21,8 +21,13 @@ import { InicializacaoHandler } from './ipc/InicializacaoHandler';
 import { ProvisionamentoService } from '../services/ProvisionamentoService';
 import { PoliticaSessao } from './seguranca/PoliticaSessao';
 import { LimitadorLogin } from './seguranca/LimitadorLogin';
+import { AlunoRepository } from '../repositories/AlunoRepository';
+import { AlunoService } from '../services/AlunoService';
+import { AlunoHandler } from './ipc/AlunoHandler';
 
 export class Composicao {
+  private alunos: AlunoService | undefined;
+  private alunoHandler: AlunoHandler | undefined;
   private conexao: Conexao | undefined;
   private autenticacao: AutenticacaoService | undefined;
   private sessoes = new SessaoManager();
@@ -47,6 +52,7 @@ export class Composicao {
       this.autenticacao = new AutenticacaoService({ dados, hash: new HashSenhaArgon2() }, limitador);
       this.sessaoAutenticacao = new SessaoAutenticacaoService(this.autenticacao, this.sessoes, new Autorizador(this.sessoes, dados));
       this.usuarios = new UsuarioService(new UsuarioRepository(conexao), new HashSenhaArgon2(), new Autorizador(this.sessoes, dados), this.sessoes);
+      this.alunos = new AlunoService(new AlunoRepository(conexao), new Autorizador(this.sessoes, dados), this.sessoes);
       this.provisionamento = new ProvisionamentoService(new UsuarioRepository(conexao), new HashSenhaArgon2(), limitador);
       this.conexao = conexao;
     } catch (erro: unknown) {
@@ -56,6 +62,9 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.alunoHandler?.encerrar();
+    this.alunoHandler = undefined;
+    this.alunos = undefined;
     this.inicializacaoHandler?.encerrar();
     this.inicializacaoHandler = undefined;
     this.provisionamento = undefined;
@@ -75,6 +84,8 @@ export class Composicao {
     if (this.sessaoAutenticacao === undefined) throw new ErroAutenticacao('INTERNO');
     this.handler ??= new AutenticacaoHandler(this.sessaoAutenticacao, this.sessoes);
     this.handler.vincular(janela, url);
+    if (this.alunos === undefined) throw new ErroAutenticacao('INTERNO');
+    this.alunoHandler ??= new AlunoHandler(this.alunos, this.handler);
     if (this.usuarios === undefined) throw new ErroAutenticacao('INTERNO');
     this.usuarioHandler ??= new UsuarioHandler(this.usuarios, this.handler);
     if (this.provisionamento === undefined) throw new ErroAutenticacao('INTERNO');

@@ -1,4 +1,6 @@
 import type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
+import type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
+export type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
 export type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 
 import type { Perfil, SaidaAutenticacao, SaidaLogout, CredenciaisEntrada } from '../tipos/Autenticacao';
@@ -28,6 +30,11 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface ContratoIpc {
+  'alunos:criar': { entrada: NovoAluno; saida: AlunoDto };
+  'alunos:listar': { entrada: EntradaLista; saida: Pagina<AlunoResumoDto> };
+  'alunos:obter': { entrada: { id: number }; saida: AlunoDto | AlunoInstrutorDto };
+  'alunos:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovoAluno> }; saida: AlunoDto };
+  'alunos:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'inicializacao:estado': { entrada: undefined; saida: { necessario: boolean } };
   'inicializacao:criar-admin': { entrada: { nome: string; email: string; senha: string }; saida: { criado: true } };
   'auth:entrar': { entrada: CredenciaisEntrada; saida: SaidaAutenticacao };
@@ -46,6 +53,13 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Capacidades só serão expostas quando seus handlers seguros forem implementados.
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
+  readonly alunos?: {
+    readonly criar: MetodoIpc<'alunos:criar'>;
+    readonly listar: MetodoIpc<'alunos:listar'>;
+    readonly obter: MetodoIpc<'alunos:obter'>;
+    readonly atualizar: MetodoIpc<'alunos:atualizar'>;
+    readonly excluir: MetodoIpc<'alunos:excluir'>;
+  };
   readonly inicializacao?: {
     readonly estado: MetodoIpc<'inicializacao:estado'>;
     readonly criarAdministrador: MetodoIpc<'inicializacao:criar-admin'>;

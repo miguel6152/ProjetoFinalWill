@@ -4,6 +4,8 @@ Documento de arquitetura baseado no `AGENTS.md` e no `README.md`. As decisões m
 
 ## 1. Visão geral e limites das camadas
 
+Atualização da frente do Davi: CRUD de alunos integrado ao Main/preload/renderer, reutilizando schema e sessões, sem migrations. Permissões, escopo de instrutores, referência de concorrência obrigatória para edição/exclusão e testes estão em [ALUNOS.md](ALUNOS.md). Os trechos históricos abaixo sobre domínios ausentes descrevem o estado anterior a essa entrega. ViaCEP, planos e matrículas continuam para etapas posteriores.
+
 Aplicação desktop em Electron e TypeScript com `strict`, SQLite com `better-sqlite3`, validação com zod e senhas com Argon2id, conforme decisão autorizada na 4.2 que substitui a previsão inicial de bcrypt. Toda lógica de negócio pertence a classes, uma por arquivo com o mesmo nome. Não haverá arquivos `.js` com lógica da aplicação nem uso de `any`.
 
 Estado atual: CRUD administrativo de usuários integrado em Main/preload/IPC e interface, com login/logout e provisionamento local do primeiro admin em banco vazio. A atualização genérica não aceita senha; usuarios:alterar-senha recebe { id, senha } exclusivamente para redefinição por admin. A migration 003 acrescenta versão de credencial, conferida no login/sessão e antes das escritas; redefinição confirmada revoga credenciais anteriores. Há expiração e limites de tentativas configuráveis. Os demais canais/regras abaixo representam contratos para módulos ainda ausentes; estado verificável em ENCERRAMENTO.md.

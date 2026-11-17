@@ -96,5 +96,6 @@ export type CompatibilidadeIpc = [
   ExigirVerdade<Igual<keyof ContratoIpc,
     'auth:entrar' | 'auth:sessao' | 'auth:sair' | 'usuarios:criar' | 'usuarios:listar' |
     'usuarios:obter' | 'usuarios:atualizar' | 'usuarios:excluir' | 'usuarios:alterar-senha' |
-    'inicializacao:estado' | 'inicializacao:criar-admin'>>
+    'inicializacao:estado' | 'inicializacao:criar-admin' |
+    'alunos:criar' | 'alunos:listar' | 'alunos:obter' | 'alunos:atualizar' | 'alunos:excluir'>>
 ];
