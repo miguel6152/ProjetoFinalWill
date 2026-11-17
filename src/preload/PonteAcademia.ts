@@ -40,7 +40,11 @@ class PonteAcademia {
       atualizar: entrada => ipcRenderer.invoke('planos:atualizar', entrada),
       excluir: entrada => ipcRenderer.invoke('planos:excluir', entrada)
     });
-    const capacidades: Readonly<ContratoPonte> = Object.freeze({ autenticacao, usuarios, inicializacao, alunos, endereco, planos });
+    const matriculas: NonNullable<ContratoPonte['matriculas']> = Object.freeze({
+      listar: entrada => ipcRenderer.invoke('matriculas:listar', entrada),
+      obter: entrada => ipcRenderer.invoke('matriculas:obter', entrada)
+    });
+    const capacidades: Readonly<ContratoPonte> = Object.freeze({ autenticacao, usuarios, inicializacao, alunos, endereco, planos, matriculas });
     contextBridge.exposeInMainWorld('academia', capacidades);
   }
 }

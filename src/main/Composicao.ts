@@ -29,8 +29,13 @@ import { EnderecoHandler } from './ipc/EnderecoHandler';
 import { PlanoRepository } from '../repositories/PlanoRepository';
 import { PlanoService } from '../services/PlanoService';
 import { PlanoHandler } from './ipc/PlanoHandler';
+import { MatriculaRepository } from '../repositories/MatriculaRepository';
+import { MatriculaService } from '../services/MatriculaService';
+import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private matriculas: MatriculaService | undefined;
+  private matriculaHandler: MatriculaHandler | undefined;
   private planos: PlanoService | undefined;
   private planoHandler: PlanoHandler | undefined;
   private enderecoHandler: EnderecoHandler | undefined;
@@ -66,6 +71,7 @@ export class Composicao {
       this.usuarios = new UsuarioService(new UsuarioRepository(conexao), new HashSenhaArgon2(), new Autorizador(this.sessoes, dados), this.sessoes);
       this.alunos = new AlunoService(new AlunoRepository(conexao), new Autorizador(this.sessoes, dados), this.sessoes);
       this.planos = new PlanoService(new PlanoRepository(conexao), this.autorizador, this.sessoes);
+      this.matriculas = new MatriculaService(new MatriculaRepository(conexao), this.autorizador, this.sessoes);
       this.provisionamento = new ProvisionamentoService(new UsuarioRepository(conexao), new HashSenhaArgon2(), limitador);
       this.conexao = conexao;
     } catch (erro: unknown) {
@@ -75,6 +81,9 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.matriculaHandler?.encerrar();
+    this.matriculaHandler = undefined;
+    this.matriculas = undefined;
     this.planoHandler?.encerrar();
     this.planoHandler = undefined;
     this.planos = undefined;
@@ -103,6 +112,8 @@ export class Composicao {
     if (this.sessaoAutenticacao === undefined) throw new ErroAutenticacao('INTERNO');
     this.handler ??= new AutenticacaoHandler(this.sessaoAutenticacao, this.sessoes);
     this.handler.vincular(janela, url);
+    if (this.matriculas === undefined) throw new ErroAutenticacao('INTERNO');
+    this.matriculaHandler ??= new MatriculaHandler(this.matriculas, this.handler);
     if (this.planos === undefined) throw new ErroAutenticacao('INTERNO');
     this.planoHandler ??= new PlanoHandler(this.planos, this.handler);
     if (this.autorizador === undefined) throw new ErroAutenticacao('INTERNO');
