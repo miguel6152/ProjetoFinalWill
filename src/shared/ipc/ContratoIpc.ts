@@ -1,5 +1,6 @@
 import type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 import type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
+import type { EnderecoDto } from '../tipos/Endereco';
 export type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
 export type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 
@@ -30,6 +31,7 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface ContratoIpc {
+  'endereco:consultar-cep': { entrada: { cep: string }; saida: EnderecoDto };
   'alunos:criar': { entrada: NovoAluno; saida: AlunoDto };
   'alunos:listar': { entrada: EntradaLista; saida: Pagina<AlunoResumoDto> };
   'alunos:obter': { entrada: { id: number }; saida: AlunoDto | AlunoInstrutorDto };
@@ -53,6 +55,7 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Capacidades só serão expostas quando seus handlers seguros forem implementados.
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
+  readonly endereco?: { readonly consultarCep: MetodoIpc<'endereco:consultar-cep'> };
   readonly alunos?: {
     readonly criar: MetodoIpc<'alunos:criar'>;
     readonly listar: MetodoIpc<'alunos:listar'>;

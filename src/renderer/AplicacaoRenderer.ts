@@ -57,7 +57,8 @@ class AplicacaoRenderer {
     alunos.addEventListener('click', () => {
       if (window.academia.alunos === undefined) return;
       this.usuarios?.encerrar(); this.usuarios = undefined; this.alunos?.encerrar();
-      this.alunos = new AlunosTela(this.conteudo, window.academia.alunos, usuario.perfil, () => this.login(false, 'Sua sessão terminou. Entre novamente.'));
+      this.alunos = new AlunosTela(this.conteudo, window.academia.alunos, usuario.perfil,
+        () => this.login(false, 'Sua sessão terminou. Entre novamente.'), window.academia.endereco);
       this.alunos.mostrar();
     });
     this.conta.append(alunos);

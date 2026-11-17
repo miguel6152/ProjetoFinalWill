@@ -42,6 +42,8 @@ Continuam pendentes, para discussão com o grupo, especialmente Davi e Vitor: pr
 
 ## Dados pessoais e de saúde
 
+ViaCEP: consultas saem somente do Main, com URL HTTPS fixa, redirecionamentos recusados e envio exclusivo do CEP. O canal específico exige admin/recepção e confere novamente origem/sessão/perfil após HTTP. Entradas e respostas passam por Zod; timeout de 8 segundos, cancelamento e erros sanitizados mantêm o preenchimento manual disponível. CPF e outros dados do aluno não são transmitidos. Contrato e testes simulados em [docs/VIACEP.md](docs/VIACEP.md).
+
 Atualização do módulo de alunos: o CRUD agora valida entradas no Main, exige sessão/perfil por canal, mascara CPF na própria saída da listagem e restringe instrutores aos alunos de suas aulas/avaliações, projetando somente ID, nome e situação. Edição/exclusão validam uma referência opaca de concorrência sob transação; dados de notificações são preservados. Detalhes, testes e limites em [docs/ALUNOS.md](docs/ALUNOS.md). As pendências de retenção, auditoria e proteção do arquivo abaixo continuam válidas; avaliações físicas seguem fora desta entrega.
 
 CPF, contato, endereço e avaliações exigem minimização e acesso por necessidade. O schema prevê esses dados, mas as telas e services que irão coletá-los ainda não existem. A aplicação não oferece nesta etapa mascaramento, gestão de direitos do titular, auditoria de acesso ou política de retenção. Tais controles devem ser implementados nos respectivos módulos antes de uso com dados reais.

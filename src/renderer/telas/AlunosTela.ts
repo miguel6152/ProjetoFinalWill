@@ -1,4 +1,5 @@
 import type { PonteAcademia, AlunoDto, AlunoInstrutorDto, NovoAluno, Perfil, Resultado } from '../../shared/ipc/ContratoIpc.js';
+import { ConsultaCepFormulario } from '../componentes/ConsultaCepFormulario.js';
 
 export class AlunosTela {
   private pagina = 1;
@@ -12,7 +13,8 @@ export class AlunosTela {
   private readonly paginacao = document.createElement('div');
 
   public constructor(private readonly destino: HTMLElement, private readonly ponte: NonNullable<PonteAcademia['alunos']>,
-    private readonly perfil: Perfil, private readonly sessaoInvalida: () => void) {}
+    private readonly perfil: Perfil, private readonly sessaoInvalida: () => void,
+    private readonly endereco?: PonteAcademia['endereco']) {}
 
   public mostrar(): void {
     const titulo = document.createElement('h2'); titulo.textContent = 'Alunos';
@@ -91,6 +93,7 @@ export class AlunosTela {
       <label>E-mail (opcional)<input name="email" type="email" maxlength="254"></label>
       <label>Telefone com DDD (opcional)<input name="telefone" type="tel" maxlength="24"></label>
       <label>CEP<input name="cep" inputmode="numeric" maxlength="9" required></label>
+      <div><button type="button" id="consultar-cep">Consultar CEP</button><p id="mensagem-cep" class="mensagem" role="status"></p></div>
       <label>Logradouro<input name="logradouro" maxlength="120" required></label>
       <label>Número (ou s/n)<input name="numero" maxlength="20" required></label>
       <label>Complemento (opcional)<input name="complemento" maxlength="120"></label>
@@ -126,6 +129,7 @@ export class AlunosTela {
         this.edicao.replaceChildren(); this.mensagem.textContent = 'Aluno salvo.'; await this.carregar();
       });
     });
+    new ConsultaCepFormulario(form, this.endereco, this.sessaoInvalida);
     this.edicao.replaceChildren(titulo, form); form.querySelector('input')!.focus();
   }
 

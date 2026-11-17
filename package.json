@@ -8,6 +8,8 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "test:viacep": "npm run build && node dist/tools/VerificarViaCep.js && electron dist/tools/VerificarViaCepIpc.js",
+    "test:viacep-interface": "npm run build && electron dist/tools/VerificarViaCepInterface.js",
     "test:alunos": "npm run build && electron dist/tools/VerificarAlunos.js",
     "test:alunos-interface": "npm run build && electron dist/tools/VerificarInterfaceAlunos.js",
     "setup:electron": "install-electron",

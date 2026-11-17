@@ -24,8 +24,12 @@ import { LimitadorLogin } from './seguranca/LimitadorLogin';
 import { AlunoRepository } from '../repositories/AlunoRepository';
 import { AlunoService } from '../services/AlunoService';
 import { AlunoHandler } from './ipc/AlunoHandler';
+import { ViaCepService } from '../services/ViaCepService';
+import { EnderecoHandler } from './ipc/EnderecoHandler';
 
 export class Composicao {
+  private enderecoHandler: EnderecoHandler | undefined;
+  private autorizador: Autorizador | undefined;
   private alunos: AlunoService | undefined;
   private alunoHandler: AlunoHandler | undefined;
   private conexao: Conexao | undefined;
@@ -38,6 +42,8 @@ export class Composicao {
   private provisionamento: ProvisionamentoService | undefined;
   private inicializacaoHandler: InicializacaoHandler | undefined;
 
+  public constructor(private readonly viaCep: ViaCepService = new ViaCepService()) {}
+
   public iniciar(caminho: string): void {
     if (this.conexao !== undefined) return;
     // Configuração inválida é rejeitada dentro do fluxo de inicialização tratado
@@ -49,6 +55,7 @@ export class Composicao {
       new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
       const dados = new ConsultaAutenticacaoRepository(conexao);
       this.sessoes = new SessaoManager(politica);
+      this.autorizador = new Autorizador(this.sessoes, dados);
       this.autenticacao = new AutenticacaoService({ dados, hash: new HashSenhaArgon2() }, limitador);
       this.sessaoAutenticacao = new SessaoAutenticacaoService(this.autenticacao, this.sessoes, new Autorizador(this.sessoes, dados));
       this.usuarios = new UsuarioService(new UsuarioRepository(conexao), new HashSenhaArgon2(), new Autorizador(this.sessoes, dados), this.sessoes);
@@ -62,6 +69,9 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.enderecoHandler?.encerrar();
+    this.enderecoHandler = undefined;
+    this.autorizador = undefined;
     this.alunoHandler?.encerrar();
     this.alunoHandler = undefined;
     this.alunos = undefined;
@@ -84,6 +94,8 @@ export class Composicao {
     if (this.sessaoAutenticacao === undefined) throw new ErroAutenticacao('INTERNO');
     this.handler ??= new AutenticacaoHandler(this.sessaoAutenticacao, this.sessoes);
     this.handler.vincular(janela, url);
+    if (this.autorizador === undefined) throw new ErroAutenticacao('INTERNO');
+    this.enderecoHandler ??= new EnderecoHandler(this.viaCep, this.handler, this.autorizador, this.sessoes);
     if (this.alunos === undefined) throw new ErroAutenticacao('INTERNO');
     this.alunoHandler ??= new AlunoHandler(this.alunos, this.handler);
     if (this.usuarios === undefined) throw new ErroAutenticacao('INTERNO');

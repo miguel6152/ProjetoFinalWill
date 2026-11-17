@@ -1,6 +1,6 @@
 # CRUD de alunos — frente do Davi
 
-Implementado na branch `feat/davi-alunos-planos-matriculas`. Esta entrega abrange somente alunos: cadastro, listagem paginada, busca, detalhes, edição, desativação e exclusão física sem dependências. ViaCEP, planos e matrículas serão tratados em etapas posteriores. O endereço é preenchido manualmente nesta etapa.
+Implementado na branch `feat/davi-alunos-planos-matriculas`. A entrega de CRUD abrange alunos: cadastro, listagem paginada, busca, detalhes, edição, desativação e exclusão física sem dependências. A etapa seguinte acrescentou [ViaCEP](VIACEP.md) como auxílio opcional ao endereço, preservando preenchimento manual. Planos e matrículas serão tratados posteriormente.
 
 ## Arquivos e decisões
 
@@ -73,4 +73,4 @@ Os testes automatizados usam dados sintéticos e bancos temporários, nunca o ar
 
 Validação desta etapa em 17/11/2026: `npm run typecheck`, `npm run build`, `git diff --check` e todos os 17 scripts `test:*` do `package.json` passaram (código 0). Isso inclui `test:alunos`, `test:alunos-interface` e as 15 suítes existentes de infraestrutura, banco, repositories, autenticação, sessões, usuários, provisionamento, políticas e interface administrativa. Runtime dos testes desktop: Electron 45.3.2, Node 24.22.2 embarcado e SQLite 3.54.1. Esses resultados cobrem os cenários automatizados; a revisão do grupo continua necessária antes da integração.
 
-Limitações: não implementa política de retenção, auditoria de acessos ou cifragem do arquivo SQLite. ViaCEP e módulos de planos/matrículas não integram esta etapa. A matriz histórica em `ENCERRAMENTO.md` registra a entrega do Miguel; o estado desta frente está neste documento.
+Limitações: não implementa política de retenção, auditoria de acessos ou cifragem do arquivo SQLite. Planos/matrículas não integram esta etapa; a integração posterior de endereço está documentada em `VIACEP.md`. A matriz histórica em `ENCERRAMENTO.md` registra a entrega do Miguel; o estado desta frente está neste documento.

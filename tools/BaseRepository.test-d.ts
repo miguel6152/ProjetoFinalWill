@@ -97,5 +97,5 @@ export type CompatibilidadeIpc = [
     'auth:entrar' | 'auth:sessao' | 'auth:sair' | 'usuarios:criar' | 'usuarios:listar' |
     'usuarios:obter' | 'usuarios:atualizar' | 'usuarios:excluir' | 'usuarios:alterar-senha' |
     'inicializacao:estado' | 'inicializacao:criar-admin' |
-    'alunos:criar' | 'alunos:listar' | 'alunos:obter' | 'alunos:atualizar' | 'alunos:excluir'>>
+    'alunos:criar' | 'alunos:listar' | 'alunos:obter' | 'alunos:atualizar' | 'alunos:excluir' | 'endereco:consultar-cep'>>
 ];
