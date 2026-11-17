@@ -1,6 +1,8 @@
 import type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 import type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
 import type { EnderecoDto } from '../tipos/Endereco';
+import type { NovoPlano, PlanoDto } from '../tipos/Plano';
+export type { NovoPlano, PlanoDto } from '../tipos/Plano';
 export type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
 export type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 
@@ -31,6 +33,11 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface ContratoIpc {
+  'planos:criar': { entrada: NovoPlano; saida: PlanoDto };
+  'planos:listar': { entrada: EntradaLista; saida: Pagina<PlanoDto> };
+  'planos:obter': { entrada: { id: number }; saida: PlanoDto };
+  'planos:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovoPlano> }; saida: PlanoDto };
+  'planos:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'endereco:consultar-cep': { entrada: { cep: string }; saida: EnderecoDto };
   'alunos:criar': { entrada: NovoAluno; saida: AlunoDto };
   'alunos:listar': { entrada: EntradaLista; saida: Pagina<AlunoResumoDto> };
@@ -55,6 +62,13 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Capacidades só serão expostas quando seus handlers seguros forem implementados.
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
+  readonly planos?: {
+    readonly criar: MetodoIpc<'planos:criar'>;
+    readonly listar: MetodoIpc<'planos:listar'>;
+    readonly obter: MetodoIpc<'planos:obter'>;
+    readonly atualizar: MetodoIpc<'planos:atualizar'>;
+    readonly excluir: MetodoIpc<'planos:excluir'>;
+  };
   readonly endereco?: { readonly consultarCep: MetodoIpc<'endereco:consultar-cep'> };
   readonly alunos?: {
     readonly criar: MetodoIpc<'alunos:criar'>;

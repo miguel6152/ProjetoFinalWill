@@ -34,6 +34,8 @@ Sessões expiram no Main após 30 minutos sem uso ou oito horas desde a autentic
 
 ## Decisões monetárias aprovadas e histórico financeiro
 
+CRUD de planos: valores são validados no Main como centavos inteiros seguros e não negativos, com duração restrita a 1/3/12 meses. Admin gerencia; recepção somente consulta; instrutor não acessa. Ator e referência de concorrência são conferidos antes da operação transacional. Exclusão respeita FK RESTRICT e desativação preserva matrículas. Nenhum valor/data contratados ou pagamento é modificado pela edição do plano. Conversão decimal, permissões e vínculos são testados; detalhes em [docs/PLANOS.md](docs/PLANOS.md).
+
 Valores monetários são armazenados em centavos como `INTEGER`. Está aprovado que `planos.valor_centavos`, `matriculas.valor_contratado_centavos` e `pagamentos.valor_centavos` devem ser maiores ou iguais a zero: valores negativos são proibidos nessas três colunas e zero é permitido, inclusive para planos gratuitos. As constraints existentes já aplicam essa restrição; nenhum SQL foi alterado por este registro documental.
 
 Créditos, descontos, estornos e reembolsos não devem ser representados simplesmente por valores negativos nessas colunas. Caso sejam implementados, deverão possuir operações e registros próprios, preservando o histórico financeiro. Essa diretriz está aprovada, mas tais funcionalidades e seus mecanismos de histórico/auditoria não estão implementados nem têm inclusão no escopo automaticamente aprovada.

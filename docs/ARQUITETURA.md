@@ -4,7 +4,7 @@ Documento de arquitetura baseado no `AGENTS.md` e no `README.md`. As decisões m
 
 ## 1. Visão geral e limites das camadas
 
-Atualização da frente do Davi: CRUD de alunos e consulta ViaCEP integrados ao Main/preload/renderer, reutilizando schema e sessões, sem migrations. Permissões, escopo de instrutores, referência de concorrência e testes estão em [ALUNOS.md](ALUNOS.md); contrato de endereço, timeout e preenchimento manual em [VIACEP.md](VIACEP.md). Os trechos históricos abaixo sobre domínios ausentes descrevem o estado anterior a essas entregas. Planos e matrículas continuam para etapas posteriores.
+Atualização da frente do Davi: CRUD de alunos, ViaCEP e CRUD de planos integrados ao Main/preload/renderer, reutilizando schema e sessões, sem migrations. Regras e testes estão em [ALUNOS.md](ALUNOS.md), [VIACEP.md](VIACEP.md) e [PLANOS.md](PLANOS.md). Planos preservam preço/datas contratados das matrículas, aceitam valor zero e mantêm FK RESTRICT na exclusão. Os trechos históricos abaixo sobre domínios ausentes descrevem o estado anterior a essas entregas. Matrículas continuam para uma etapa posterior.
 
 Aplicação desktop em Electron e TypeScript com `strict`, SQLite com `better-sqlite3`, validação com zod e senhas com Argon2id, conforme decisão autorizada na 4.2 que substitui a previsão inicial de bcrypt. Toda lógica de negócio pertence a classes, uma por arquivo com o mesmo nome. Não haverá arquivos `.js` com lógica da aplicação nem uso de `any`.
 

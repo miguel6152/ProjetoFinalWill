@@ -29,7 +29,7 @@ class VerificarInfraestrutura {
         csp: document.querySelector('meta[http-equiv="Content-Security-Policy"]').content
       })`);
       assert.deepEqual(estado, {
-        require: 'undefined', process: 'undefined', ponte: 'object', capacidades: ['autenticacao', 'usuarios', 'inicializacao', 'alunos', 'endereco'],
+        require: 'undefined', process: 'undefined', ponte: 'object', capacidades: ['autenticacao', 'usuarios', 'inicializacao', 'alunos', 'endereco', 'planos'],
         mensagem: 'Configuração inicial',
         csp: "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'"
       });

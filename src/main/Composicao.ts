@@ -26,8 +26,13 @@ import { AlunoService } from '../services/AlunoService';
 import { AlunoHandler } from './ipc/AlunoHandler';
 import { ViaCepService } from '../services/ViaCepService';
 import { EnderecoHandler } from './ipc/EnderecoHandler';
+import { PlanoRepository } from '../repositories/PlanoRepository';
+import { PlanoService } from '../services/PlanoService';
+import { PlanoHandler } from './ipc/PlanoHandler';
 
 export class Composicao {
+  private planos: PlanoService | undefined;
+  private planoHandler: PlanoHandler | undefined;
   private enderecoHandler: EnderecoHandler | undefined;
   private autorizador: Autorizador | undefined;
   private alunos: AlunoService | undefined;
@@ -60,6 +65,7 @@ export class Composicao {
       this.sessaoAutenticacao = new SessaoAutenticacaoService(this.autenticacao, this.sessoes, new Autorizador(this.sessoes, dados));
       this.usuarios = new UsuarioService(new UsuarioRepository(conexao), new HashSenhaArgon2(), new Autorizador(this.sessoes, dados), this.sessoes);
       this.alunos = new AlunoService(new AlunoRepository(conexao), new Autorizador(this.sessoes, dados), this.sessoes);
+      this.planos = new PlanoService(new PlanoRepository(conexao), this.autorizador, this.sessoes);
       this.provisionamento = new ProvisionamentoService(new UsuarioRepository(conexao), new HashSenhaArgon2(), limitador);
       this.conexao = conexao;
     } catch (erro: unknown) {
@@ -69,6 +75,9 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.planoHandler?.encerrar();
+    this.planoHandler = undefined;
+    this.planos = undefined;
     this.enderecoHandler?.encerrar();
     this.enderecoHandler = undefined;
     this.autorizador = undefined;
@@ -94,6 +103,8 @@ export class Composicao {
     if (this.sessaoAutenticacao === undefined) throw new ErroAutenticacao('INTERNO');
     this.handler ??= new AutenticacaoHandler(this.sessaoAutenticacao, this.sessoes);
     this.handler.vincular(janela, url);
+    if (this.planos === undefined) throw new ErroAutenticacao('INTERNO');
+    this.planoHandler ??= new PlanoHandler(this.planos, this.handler);
     if (this.autorizador === undefined) throw new ErroAutenticacao('INTERNO');
     this.enderecoHandler ??= new EnderecoHandler(this.viaCep, this.handler, this.autorizador, this.sessoes);
     if (this.alunos === undefined) throw new ErroAutenticacao('INTERNO');

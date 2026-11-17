@@ -2,11 +2,13 @@ import type { UsuarioSessao } from '../shared/tipos/Autenticacao.js';
 import { LoginTela } from './telas/LoginTela.js';
 import { UsuariosTela } from './telas/UsuariosTela.js';
 import { AlunosTela } from './telas/AlunosTela.js';
+import { PlanosTela } from './telas/PlanosTela.js';
 
 class AplicacaoRenderer {
   private geracao = 0;
   private usuarios: UsuariosTela | undefined;
   private alunos: AlunosTela | undefined;
+  private planos: PlanosTela | undefined;
   private readonly conteudo = document.getElementById('conteudo')!;
   private readonly estado = document.getElementById('estado')!;
   private readonly conta = document.getElementById('conta')!;
@@ -27,6 +29,7 @@ class AplicacaoRenderer {
   private login(inicial: boolean, mensagem?: string): void {
     this.geracao++; this.usuarios?.encerrar(); this.usuarios = undefined; this.conta.replaceChildren();
     this.alunos?.encerrar(); this.alunos = undefined;
+    this.planos?.encerrar(); this.planos = undefined;
     this.estado.textContent = mensagem ?? (inicial ? 'Configuração inicial' : 'Acesso ao sistema');
     const geracao = this.geracao;
     new LoginTela(this.conteudo).mostrar(inicial, async dados => {
@@ -44,6 +47,7 @@ class AplicacaoRenderer {
   }
 
   private painel(usuario: UsuarioSessao): void {
+    this.planos?.encerrar(); this.planos = undefined;
     this.geracao++; this.usuarios?.encerrar(); this.estado.textContent = 'Sessão iniciada';
     this.alunos?.encerrar(); this.alunos = undefined;
     const nome = document.createElement('span'); nome.textContent = `${usuario.nome} · ${usuario.perfil}`;
@@ -56,12 +60,23 @@ class AplicacaoRenderer {
     const alunos = document.createElement('button'); alunos.type = 'button'; alunos.id = 'abrir-alunos'; alunos.textContent = 'Alunos';
     alunos.addEventListener('click', () => {
       if (window.academia.alunos === undefined) return;
+      this.planos?.encerrar(); this.planos = undefined;
       this.usuarios?.encerrar(); this.usuarios = undefined; this.alunos?.encerrar();
       this.alunos = new AlunosTela(this.conteudo, window.academia.alunos, usuario.perfil,
         () => this.login(false, 'Sua sessão terminou. Entre novamente.'), window.academia.endereco);
       this.alunos.mostrar();
     });
     this.conta.append(alunos);
+    if (usuario.perfil === 'admin' || usuario.perfil === 'recepcao') {
+      const planos = document.createElement('button'); planos.type = 'button'; planos.id = 'abrir-planos'; planos.textContent = 'Planos';
+      planos.addEventListener('click',() => {
+        if (window.academia.planos === undefined) return;
+        this.usuarios?.encerrar(); this.usuarios = undefined; this.alunos?.encerrar(); this.alunos = undefined; this.planos?.encerrar();
+        this.planos = new PlanosTela(this.conteudo,window.academia.planos,usuario.perfil,() => this.login(false,'Sua sessão terminou. Entre novamente.'));
+        this.planos.mostrar();
+      });
+      this.conta.append(planos);
+    }
     if (usuario.perfil === 'admin') {
       const usuarios = document.createElement('button'); usuarios.type = 'button'; usuarios.id = 'abrir-usuarios'; usuarios.textContent = 'Usuários';
       usuarios.addEventListener('click', () => this.painel(usuario)); this.conta.append(usuarios);
