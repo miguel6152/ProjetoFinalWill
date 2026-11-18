@@ -36,6 +36,8 @@ export interface NovoUsuario {
 }
 export interface ContratoIpc {
   'matriculas:criar': { entrada: NovaMatricula; saida: MatriculaDto };
+  'matriculas:cancelar': { entrada: { id: number }; saida: MatriculaDto };
+  'matriculas:encerrar': { entrada: { id: number }; saida: MatriculaDto };
   'matriculas:listar': { entrada: ListaMatriculas; saida: Pagina<MatriculaDto> };
   'matriculas:obter': { entrada: { id: number }; saida: MatriculaDto };
   'planos:criar': { entrada: NovoPlano; saida: PlanoDto };
@@ -67,7 +69,7 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Capacidades só serão expostas quando seus handlers seguros forem implementados.
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
-  readonly matriculas?: { readonly criar: MetodoIpc<'matriculas:criar'>; readonly listar: MetodoIpc<'matriculas:listar'>; readonly obter: MetodoIpc<'matriculas:obter'> };
+  readonly matriculas?: { readonly criar: MetodoIpc<'matriculas:criar'>; readonly listar: MetodoIpc<'matriculas:listar'>; readonly obter: MetodoIpc<'matriculas:obter'>; readonly cancelar: MetodoIpc<'matriculas:cancelar'>; readonly encerrar: MetodoIpc<'matriculas:encerrar'> };
   readonly planos?: {
     readonly criar: MetodoIpc<'planos:criar'>;
     readonly listar: MetodoIpc<'planos:listar'>;

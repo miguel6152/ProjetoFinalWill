@@ -38,7 +38,7 @@ export class MatriculaService {
         const dados = resultado.data;
         if (!this.repository.alunoExiste(dados.aluno_id)) throw new ErroMatricula('VALIDACAO', { aluno_id: ['Aluno não encontrado.'] });
         if (!this.repository.planoAtivo(dados.plano_id)) throw new ErroMatricula('VALIDACAO', { plano_id: ['Plano inexistente ou inativo.'] });
-        if (this.repository.sobrepoe(dados.aluno_id, dados.data_inicio, dados.data_fim)) throw new ErroMatricula('CONFLITO');
+        if (this.repository.sobrepoe(dados.aluno_id, dados.data_inicio, dados.data_fim)) throw new ErroMatricula('CONFLITO', { datas: ['O aluno já possui matrícula ativa em período sobreposto.'] });
         return this.repository.cadastrar(dados);
       }
       if (canal === 'matriculas:listar') {
@@ -51,8 +51,18 @@ export class MatriculaService {
       if (!resultado.success) throw new ErroMatricula('VALIDACAO');
       const matricula = this.repository.detalhes(resultado.data.id);
       if (matricula === undefined) throw new ErroMatricula('NAO_ENCONTRADO');
+      if (canal === 'matriculas:cancelar' || canal === 'matriculas:encerrar') {
+        if (matricula.situacao !== 'ativa') throw new ErroMatricula('CONFLITO', { situacao: ['Somente matrículas ativas podem ser alteradas.'] });
+        const agora = new Date();
+        const hoje = `${String(agora.getFullYear()).padStart(4, '0')}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+        if (canal === 'matriculas:encerrar' && matricula.data_fim >= hoje) throw new ErroMatricula('VALIDACAO', { data_fim: ['O encerramento só é permitido a partir do dia seguinte à data final.'] });
+        if (!this.repository.alterarSituacao(matricula.id, canal === 'matriculas:cancelar' ? 'cancelada' : 'encerrada')) throw new ErroMatricula('CONFLITO');
+        const atualizado = this.repository.detalhes(matricula.id);
+        if (atualizado === undefined) throw new ErroMatricula('INTERNO');
+        return atualizado;
+      }
       return matricula;
     };
-    return canal === 'matriculas:criar' ? this.repository.escritaAtomica(operacao) : this.repository.atomico(operacao);
+    return canal === 'matriculas:criar' || canal === 'matriculas:cancelar' || canal === 'matriculas:encerrar' ? this.repository.escritaAtomica(operacao) : this.repository.atomico(operacao);
   }
 }

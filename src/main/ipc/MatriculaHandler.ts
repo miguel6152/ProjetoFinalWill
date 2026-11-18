@@ -9,7 +9,7 @@ import { ErroAutenticacao } from '../seguranca/ErroAutenticacao';
 import { AutenticacaoHandler } from './AutenticacaoHandler';
 
 export class MatriculaHandler {
-  private readonly canais: readonly CanalMatricula[] = ['matriculas:criar', 'matriculas:listar', 'matriculas:obter'];
+  private readonly canais: readonly CanalMatricula[] = ['matriculas:criar', 'matriculas:listar', 'matriculas:obter', 'matriculas:cancelar', 'matriculas:encerrar'];
   private encerrado = false;
   public constructor(private readonly servico: MatriculaService, private readonly origem: AutenticacaoHandler) {
     const registrados: CanalMatricula[] = [];

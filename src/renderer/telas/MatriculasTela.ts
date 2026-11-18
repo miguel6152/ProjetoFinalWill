@@ -81,6 +81,22 @@ export class MatriculasTela {
     const campos: [string, string][] = [['ID', String(m.id)], ['Aluno', `${m.aluno_nome} (ID ${m.aluno_id})`], ['Plano', `${m.plano_nome} (ID ${m.plano_id})`], ['Início', m.data_inicio], ['Fim', m.data_fim], ['Valor contratado', ValorMonetario.formatar(m.valor_contratado_centavos)], ['Situação', m.situacao], ['Cadastrada em', new Date(m.criado_em).toLocaleString('pt-BR')], ['Atualizada em', new Date(m.atualizado_em).toLocaleString('pt-BR')]];
     for (const [rotulo, valor] of campos) { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = rotulo; dd.textContent = valor; lista.append(dt, dd); }
     this.detalhesArea.replaceChildren(titulo, lista, this.botao('Fechar', () => this.detalhesArea.replaceChildren()));
+    if (m.situacao === 'ativa') {
+      const cancelar = this.botao('Cancelar matrícula', () => this.confirmarSituacao(m, 'cancelar')); cancelar.id = 'cancelar-matricula';
+      const encerrar = this.botao('Encerrar matrícula', () => this.confirmarSituacao(m, 'encerrar')); encerrar.id = 'encerrar-matricula';
+      this.detalhesArea.append(cancelar, encerrar);
+    }
+  }
+  private confirmarSituacao(m: MatriculaDto, acao: 'cancelar' | 'encerrar'): void {
+    const texto = document.createElement('p'); texto.textContent = `Confirmar ${acao} da matrícula ${m.id} de ${m.aluno_nome}?`;
+    const confirmar = this.botao('Confirmar', () => this.proteger(async () => {
+      const resultado = this.exigir(await this.ponte[acao]({ id: m.id }));
+      if (!this.ativa) return;
+      await this.carregar();
+      if (!this.ativa) return;
+      this.detalhes(resultado); this.mensagem.textContent = acao === 'cancelar' ? 'Matrícula cancelada.' : 'Matrícula encerrada.';
+    })); confirmar.id = 'confirmar-situacao-matricula';
+    this.detalhesArea.replaceChildren(texto, confirmar, this.botao('Voltar', () => this.detalhes(m)));
   }
   private botao(texto: string, acao: () => void | Promise<void>): HTMLButtonElement {
     const botao = document.createElement('button'); botao.type = 'button'; botao.textContent = texto;

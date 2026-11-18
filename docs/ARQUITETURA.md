@@ -4,7 +4,7 @@ Documento de arquitetura baseado no `AGENTS.md` e no `README.md`. As decisões m
 
 ## 1. Visão geral e limites das camadas
 
-Matrículas: cadastro e consulta foram integrados ao Electron com autorização de admin e recepção. O cadastro bloqueia sobreposição inclusiva de matrículas ativas do mesmo aluno, independentemente do plano, em transação de escrita. Ver [MATRICULAS.md](MATRICULAS.md). Alterações, exclusão e regras financeiras continuam pendentes.
+Matrículas: cadastro, consulta, cancelamento e encerramento foram integrados ao Electron com autorização de admin e recepção. O cadastro bloqueia sobreposição inclusiva de matrículas ativas do mesmo aluno, independentemente do plano, em transação de escrita. O encerramento é permitido após o último dia contratado. Ver [MATRICULAS.md](MATRICULAS.md). Exclusão e regras financeiras continuam pendentes.
 
 Atualização da frente do Davi: CRUD de alunos, ViaCEP e CRUD de planos integrados ao Main/preload/renderer, reutilizando schema e sessões, sem migrations. Regras e testes estão em [ALUNOS.md](ALUNOS.md), [VIACEP.md](VIACEP.md) e [PLANOS.md](PLANOS.md). Planos preservam preço/datas contratados das matrículas, aceitam valor zero e mantêm FK RESTRICT na exclusão. Os trechos históricos abaixo sobre domínios ausentes descrevem o estado anterior a essas entregas. Matrículas continuam para uma etapa posterior.
 

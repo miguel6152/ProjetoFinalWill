@@ -34,6 +34,9 @@ export class MatriculaRepository extends BaseRepository<Matricula, never> {
     if (detalhes === undefined) throw new Error('Matrícula indisponível');
     return detalhes;
   }
+  public alterarSituacao(id: number, situacao: 'cancelada' | 'encerrada'): boolean {
+    return this.conexao.preparar<[string, number], never>("UPDATE matriculas SET situacao=? WHERE id=? AND situacao='ativa'").run(situacao, id).changes === 1;
+  }
   public atorAtual(id: number) { return this.atores.atorAtual(id); }
   private static readonly origem = ' FROM matriculas m JOIN alunos a ON a.id=m.aluno_id JOIN planos p ON p.id=m.plano_id';
   private static readonly colunas = 'SELECT m.id,m.aluno_id,a.nome AS aluno_nome,m.plano_id,p.nome AS plano_nome,m.data_inicio,m.data_fim,m.valor_contratado_centavos,m.situacao,m.criado_em,m.atualizado_em';
