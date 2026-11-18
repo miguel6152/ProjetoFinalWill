@@ -3,9 +3,9 @@
 Projeto final da disciplina **DAD (Desenvolvimento de Aplicações Desktop)**.
 Aplicação desktop em **Electron + TypeScript** para gerenciar uma academia de bairro: alunos, planos, mensalidades, aulas, instrutores e avaliações físicas.
 
-> Status: em desenvolvimento. A [consulta de matrículas](docs/MATRICULAS.md) está disponível para administrador e recepção; cadastro e alterações de matrículas ainda não foram implementados.
+> Status: em desenvolvimento. O [cadastro e a consulta de matrículas](docs/MATRICULAS.md) estão disponíveis para administrador e recepção; alterações e exclusão de matrículas ainda não foram implementadas.
 
-A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e a [consulta de matrículas](docs/MATRICULAS.md), integrados ao Electron. As operações de escrita de matrículas, financeiro/notificações, aulas/avaliações e as outras três integrações de API ainda dependem das próximas entregas. Isso impede considerar o projeto completo pronto. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
+A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e o [cadastro e consulta de matrículas](docs/MATRICULAS.md), integrados ao Electron. Alterações e exclusão de matrículas, financeiro/notificações, aulas/avaliações e as outras três integrações de API ainda dependem das próximas entregas. Isso impede considerar o projeto completo pronto. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
 
 ## Integrantes
 

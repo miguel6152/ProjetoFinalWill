@@ -99,5 +99,5 @@ export type CompatibilidadeIpc = [
     'inicializacao:estado' | 'inicializacao:criar-admin' |
     'alunos:criar' | 'alunos:listar' | 'alunos:obter' | 'alunos:atualizar' | 'alunos:excluir' | 'endereco:consultar-cep' |
     'planos:criar' | 'planos:listar' | 'planos:obter' | 'planos:atualizar' | 'planos:excluir' |
-    'matriculas:listar' | 'matriculas:obter'>>
+    'matriculas:criar' | 'matriculas:listar' | 'matriculas:obter'>>
 ];

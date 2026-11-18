@@ -42,7 +42,21 @@ class VerificarMatriculas {
       for (const entrada of [{ pagina: 0, tamanho: 10 }, { pagina: 1, tamanho: 101 }, { pagina: 1, tamanho: 10, aluno_id: '1 OR 1=1' }, { pagina: 1, tamanho: 10, situacao: 'invalida' }, { pagina: 1, tamanho: 10, extra: 1 }]) this.falha(await consultar(admin, 'listar', entrada), 'VALIDACAO');
       this.falha(await consultar(admin, 'obter', { id: 999 }), 'NAO_ENCONTRADO');
       for (const [janela, esperado] of [[instrutor,'SEM_PERMISSAO'],[anonimo,'NAO_AUTENTICADO']] as const) for (const metodo of ['listar','obter']) this.falha(await consultar(janela, metodo, {}), esperado);
-      assert.deepEqual(await admin.webContents.executeJavaScript('Object.keys(window.academia.matriculas)'), ['listar','obter']);
+      assert.deepEqual(await admin.webContents.executeJavaScript('Object.keys(window.academia.matriculas)'), ['criar','listar','obter']);
+      const novo = { aluno_id: aluno.id, plano_id: outro.id, data_inicio: '2026-01-31', data_fim: '2026-02-28', valor_contratado_centavos: 0 };
+      this.falha(await consultar(admin, 'criar', novo), 'CONFLITO');
+      const primeiro = this.ok(await consultar(recepcao, 'criar', { ...novo, data_inicio: '2026-02-01' })) as { id: number; situacao: string; valor_contratado_centavos: number };
+      assert.equal(primeiro.situacao, 'ativa'); assert.equal(primeiro.valor_contratado_centavos, 0);
+      for (const dados of [{ ...novo, aluno_id: 999 }, { ...novo, plano_id: 999 }, { ...novo, data_inicio: '2026-02-30' }, { ...novo, data_inicio: '2026-03-01', data_fim: '2026-02-01' }, { ...novo, valor_contratado_centavos: -1 }, { ...novo, valor_contratado_centavos: 1.5 }, { ...novo, situacao: 'cancelada' }]) this.falha(await consultar(admin, 'criar', dados), 'VALIDACAO');
+      const inativo = planos.create({ nome: 'Inativo', duracao_meses: 1, valor_centavos: 1, ativo: 0 });
+      this.falha(await consultar(admin, 'criar', { ...novo, plano_id: inativo.id }), 'VALIDACAO');
+      this.falha(await consultar(instrutor, 'criar', novo), 'SEM_PERMISSAO');
+      this.falha(await consultar(anonimo, 'criar', novo), 'NAO_AUTENTICADO');
+      const simultaneo = { ...novo, data_inicio: '2026-03-01', data_fim: '2026-03-31' };
+      const concorrentes = await Promise.all([consultar(admin, 'criar', simultaneo), consultar(recepcao, 'criar', simultaneo)]);
+      assert.equal(concorrentes.filter(r => r.sucesso).length, 1); assert.equal(concorrentes.filter(r => !r.sucesso && r.erro.codigo === 'CONFLITO').length, 1);
+      banco.preparar<[], never>("INSERT INTO matriculas (aluno_id,plano_id,data_inicio,data_fim,valor_contratado_centavos,situacao,criado_em,atualizado_em) VALUES (1,1,'2026-04-01','2026-04-30',0,'encerrada','2026-01-01T00:00:00Z','2026-01-01T00:00:00Z'),(1,1,'2026-04-01','2026-04-30',0,'cancelada','2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')").run();
+      this.ok(await consultar(admin, 'criar', { ...novo, data_inicio: '2026-04-01', data_fim: '2026-04-30' }));
       await recepcao.webContents.executeJavaScript(`document.querySelector('#form-login [name=email]').value='recepcao@example.invalid'; document.querySelector('#form-login [name=senha]').value=${JSON.stringify(this.senha)}; document.querySelector('#form-login').requestSubmit()`);
       await this.aguardar(recepcao, "document.querySelector('#abrir-matriculas') !== null");
       await recepcao.webContents.executeJavaScript("document.querySelector('#abrir-matriculas').click()");
@@ -54,6 +68,9 @@ class VerificarMatriculas {
       await recepcao.webContents.executeJavaScript("document.querySelector('[name=plano_id]').value='2'; document.querySelector('[name=situacao]').value='cancelada'; document.querySelector('#filtros-matriculas').requestSubmit()");
       await this.aguardar(recepcao, "document.querySelectorAll('#matriculas tbody tr[data-id]').length === 1");
       assert.equal(await recepcao.webContents.executeJavaScript("document.querySelector('#matriculas tbody tr').dataset.id"), '1');
+      await recepcao.webContents.executeJavaScript("document.querySelector('#nova-matricula').click(); const f=document.querySelector('#form-matricula'); f.elements.aluno_id.value='1'; f.elements.plano_id.value='1'; f.elements.data_inicio.value='2026-05-01'; f.elements.data_fim.value='2026-05-31'; f.elements.valor.value='25,50'; f.requestSubmit()");
+      await this.aguardar(recepcao, "document.querySelector('#mensagem-matriculas').textContent.includes('cadastrada')");
+      assert.equal(banco.preparar<[], { total: number }>("SELECT COUNT(*) AS total FROM matriculas WHERE data_inicio='2026-05-01' AND valor_contratado_centavos=2550").get()?.total, 1);
       assert.deepEqual(banco.preparar<[], unknown>('PRAGMA foreign_key_check').all(), []);
       console.log('OK: paginação, filtros combinados, detalhes, validação, perfis, sessão e interface Electron.');
     } catch (erro: unknown) { console.error(erro); codigo = 1; }

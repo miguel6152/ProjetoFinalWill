@@ -136,7 +136,7 @@ export class AlunosTela {
   private detalhes(aluno: AlunoDto | AlunoInstrutorDto): void {
     const titulo = document.createElement('h3'); titulo.textContent = 'Detalhes do aluno';
     const lista = document.createElement('dl'); lista.id = 'detalhes-aluno'; lista.className = 'cartao';
-    const campos: [string, string][] = [['Nome', aluno.nome], ['Situação', aluno.ativo === 1 ? 'Ativo' : 'Inativo']];
+    const campos: [string, string][] = [['ID', String(aluno.id)], ['Nome', aluno.nome], ['Situação', aluno.ativo === 1 ? 'Ativo' : 'Inativo']];
     if ('cpf' in aluno) campos.push(['CPF', aluno.cpf], ['Nascimento', aluno.data_nascimento], ['E-mail', aluno.email ?? 'Não informado'],
       ['Telefone', aluno.telefone ?? 'Não informado'], ['CEP', aluno.cep], ['Logradouro', aluno.logradouro], ['Número', aluno.numero],
       ['Complemento', aluno.complemento ?? 'Não informado'], ['Bairro', aluno.bairro], ['Cidade', aluno.cidade], ['UF', aluno.uf],

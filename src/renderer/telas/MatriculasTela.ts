@@ -23,6 +23,7 @@ export class MatriculasTela {
       this.filtros = { ...(aluno ? { aluno_id: Number(aluno) } : {}), ...(plano ? { plano_id: Number(plano) } : {}), ...(situacao ? { situacao } : {}) };
       this.pagina = 1; this.detalhesArea.replaceChildren(); void this.proteger(() => this.carregar());
     });
+    const novo = this.botao('Nova matrícula', () => this.formulario()); novo.id = 'nova-matricula'; filtros.append(novo);
     this.mensagem.id = 'mensagem-matriculas'; this.mensagem.className = 'mensagem'; this.mensagem.setAttribute('role', 'status');
     const tabela = document.createElement('table'); tabela.id = 'matriculas';
     tabela.innerHTML = '<thead><tr><th>ID</th><th>Aluno</th><th>Plano</th><th>Início</th><th>Fim</th><th>Situação</th><th>Ações</th></tr></thead>';
@@ -31,6 +32,26 @@ export class MatriculasTela {
     void this.proteger(() => this.carregar());
   }
   public encerrar(): void { this.ativa = false; }
+  private formulario(): void {
+    const titulo = document.createElement('h3'); titulo.textContent = 'Nova matrícula';
+    const form = document.createElement('form'); form.id = 'form-matricula'; form.className = 'cartao grade-formulario';
+    form.innerHTML = '<label>ID do aluno<input name="aluno_id" type="number" min="1" step="1" required></label><label>ID do plano ativo<input name="plano_id" type="number" min="1" step="1" required></label><label>Início<input name="data_inicio" type="date" required></label><label>Fim<input name="data_fim" type="date" required></label><label>Valor contratado (R$)<input name="valor" inputmode="decimal" required></label><div class="acoes"><button type="submit">Salvar matrícula</button><button type="button" id="fechar-form-matricula">Fechar</button></div>';
+    form.querySelector('#fechar-form-matricula')!.addEventListener('click', () => { if (!this.ocupada) this.detalhesArea.replaceChildren(); });
+    form.addEventListener('submit', evento => {
+      evento.preventDefault();
+      void this.proteger(async () => {
+        const valor = ValorMonetario.paraCentavos(form.querySelector<HTMLInputElement>('[name=valor]')!.value);
+        if (valor === undefined) { this.mensagem.textContent = 'Informe um valor não negativo com até duas casas decimais.'; return; }
+        const matricula = this.exigir(await this.ponte.criar({ aluno_id: Number(form.querySelector<HTMLInputElement>('[name=aluno_id]')!.value),
+          plano_id: Number(form.querySelector<HTMLInputElement>('[name=plano_id]')!.value), data_inicio: form.querySelector<HTMLInputElement>('[name=data_inicio]')!.value,
+          data_fim: form.querySelector<HTMLInputElement>('[name=data_fim]')!.value, valor_contratado_centavos: valor }));
+        if (!this.ativa) return;
+        this.pagina = 1; this.detalhesArea.replaceChildren(); this.mensagem.textContent = 'Matrícula cadastrada.';
+        await this.carregar(); this.detalhes(matricula);
+      });
+    });
+    this.detalhesArea.replaceChildren(titulo, form);
+  }
   private async carregar(): Promise<void> {
     const resultado = this.exigir(await this.ponte.listar({ pagina: this.pagina, tamanho: 10, ...this.filtros }));
     if (!this.ativa) return;
@@ -67,7 +88,7 @@ export class MatriculasTela {
   }
   private exigir<T>(resultado: Resultado<T>): T {
     if (resultado.sucesso) return resultado.dados;
-    if (this.ativa) { this.mensagem.textContent = resultado.erro.mensagem; if (resultado.erro.codigo === 'NAO_AUTENTICADO') this.sessaoInvalida(); }
+    if (this.ativa) { this.mensagem.textContent = [resultado.erro.mensagem, ...Object.values(resultado.erro.campos ?? {}).flat()].join(' '); if (resultado.erro.codigo === 'NAO_AUTENTICADO') this.sessaoInvalida(); }
     throw new Error('Consulta recusada');
   }
   private async proteger(acao: () => Promise<void>): Promise<void> {

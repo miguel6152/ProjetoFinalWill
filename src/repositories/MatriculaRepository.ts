@@ -1,6 +1,6 @@
 import type { Conexao } from '../database/Conexao';
 import type { Matricula } from '../models/Matricula';
-import type { ListaMatriculas, MatriculaDto } from '../shared/tipos/Matricula';
+import type { ListaMatriculas, MatriculaDto, NovaMatricula } from '../shared/tipos/Matricula';
 import type { Pagina } from '../shared/ipc/ContratoIpc';
 import { BaseRepository } from './BaseRepository';
 import { PlanoRepository } from './PlanoRepository';
@@ -22,6 +22,18 @@ export class MatriculaRepository extends BaseRepository<Matricula, never> {
     this.atores = new PlanoRepository(conexao);
   }
   public atomico<T>(operacao: () => T extends PromiseLike<unknown> ? never : T): T { return this.conexao.transacaoLeitura(operacao); }
+  public escritaAtomica<T>(operacao: () => T extends PromiseLike<unknown> ? never : T): T { return this.conexao.transacao(operacao); }
+  public alunoExiste(id: number): boolean { return this.conexao.preparar<[number], { id: number }>('SELECT id FROM alunos WHERE id=?').get(id) !== undefined; }
+  public planoAtivo(id: number): boolean { return this.conexao.preparar<[number], { id: number }>('SELECT id FROM planos WHERE id=? AND ativo=1').get(id) !== undefined; }
+  public sobrepoe(aluno: number, inicio: string, fim: string): boolean {
+    return this.conexao.preparar<[number, string, string], { id: number }>("SELECT id FROM matriculas WHERE aluno_id=? AND situacao='ativa' AND data_inicio<=? AND data_fim>=? LIMIT 1").get(aluno, fim, inicio) !== undefined;
+  }
+  public cadastrar(dados: NovaMatricula): MatriculaDto {
+    const resultado = this.create({ ...dados, situacao: 'ativa' });
+    const detalhes = this.detalhes(resultado.id);
+    if (detalhes === undefined) throw new Error('Matrícula indisponível');
+    return detalhes;
+  }
   public atorAtual(id: number) { return this.atores.atorAtual(id); }
   private static readonly origem = ' FROM matriculas m JOIN alunos a ON a.id=m.aluno_id JOIN planos p ON p.id=m.plano_id';
   private static readonly colunas = 'SELECT m.id,m.aluno_id,a.nome AS aluno_nome,m.plano_id,p.nome AS plano_nome,m.data_inicio,m.data_fim,m.valor_contratado_centavos,m.situacao,m.criado_em,m.atualizado_em';

@@ -41,6 +41,7 @@ class PonteAcademia {
       excluir: entrada => ipcRenderer.invoke('planos:excluir', entrada)
     });
     const matriculas: NonNullable<ContratoPonte['matriculas']> = Object.freeze({
+      criar: entrada => ipcRenderer.invoke('matriculas:criar', entrada),
       listar: entrada => ipcRenderer.invoke('matriculas:listar', entrada),
       obter: entrada => ipcRenderer.invoke('matriculas:obter', entrada)
     });

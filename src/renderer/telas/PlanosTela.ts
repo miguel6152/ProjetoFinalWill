@@ -98,7 +98,7 @@ export class PlanosTela {
   private detalhes(plano: PlanoDto): void {
     const titulo = document.createElement('h3'); titulo.textContent = 'Detalhes do plano';
     const lista = document.createElement('dl'); lista.id = 'detalhes-plano'; lista.className = 'cartao';
-    for (const [rotulo,valor] of [['Nome',plano.nome], ['Duração',`${plano.duracao_meses} mês(es)`], ['Valor',ValorMonetario.formatar(plano.valor_centavos)],
+    for (const [rotulo,valor] of [['ID',String(plano.id)], ['Nome',plano.nome], ['Duração',`${plano.duracao_meses} mês(es)`], ['Valor',ValorMonetario.formatar(plano.valor_centavos)],
       ['Situação',plano.ativo === 1 ? 'Ativo' : 'Inativo'], ['Cadastrado em',new Date(plano.criado_em).toLocaleString('pt-BR')], ['Atualizado em',new Date(plano.atualizado_em).toLocaleString('pt-BR')]]) {
       const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = rotulo!; dd.textContent = valor!; lista.append(dt,dd);
     }
