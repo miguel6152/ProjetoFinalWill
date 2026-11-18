@@ -9,7 +9,7 @@ import { ErroAutenticacao } from '../seguranca/ErroAutenticacao';
 import { AutenticacaoHandler } from './AutenticacaoHandler';
 
 export class MatriculaHandler {
-  private readonly canais: readonly CanalMatricula[] = ['matriculas:criar', 'matriculas:listar', 'matriculas:obter', 'matriculas:cancelar', 'matriculas:encerrar'];
+  private readonly canais: readonly CanalMatricula[] = ['matriculas:criar', 'matriculas:listar', 'matriculas:obter', 'matriculas:cancelar', 'matriculas:encerrar', 'matriculas:excluir'];
   private encerrado = false;
   public constructor(private readonly servico: MatriculaService, private readonly origem: AutenticacaoHandler) {
     const registrados: CanalMatricula[] = [];
@@ -37,8 +37,10 @@ export class MatriculaHandler {
       const codigo = erro instanceof ErroMatricula || erro instanceof ErroAutenticacao ? erro.codigo
         : erro instanceof ErroRepository && erro.codigo === 'CONFLITO' ? 'CONFLITO' : 'INTERNO';
       const seguro = new ErroMatricula(codigo);
+      const campos = erro instanceof ErroMatricula ? erro.campos : erro instanceof ErroRepository && erro.codigo === 'CONFLITO' && canal === 'matriculas:excluir'
+        ? { vinculos: ['Matrícula com pagamentos ou notificações vinculados não pode ser excluída.'] } : undefined;
       return { sucesso: false, erro: { codigo: seguro.codigo, mensagem: seguro.message,
-        ...(erro instanceof ErroMatricula && erro.campos !== undefined ? { campos: erro.campos } : {}) } };
+        ...(campos === undefined ? {} : { campos }) } };
     }
   }
 

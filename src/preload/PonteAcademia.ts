@@ -44,6 +44,7 @@ class PonteAcademia {
       criar: entrada => ipcRenderer.invoke('matriculas:criar', entrada),
       cancelar: entrada => ipcRenderer.invoke('matriculas:cancelar', entrada),
       encerrar: entrada => ipcRenderer.invoke('matriculas:encerrar', entrada),
+      excluir: entrada => ipcRenderer.invoke('matriculas:excluir', entrada),
       listar: entrada => ipcRenderer.invoke('matriculas:listar', entrada),
       obter: entrada => ipcRenderer.invoke('matriculas:obter', entrada)
     });

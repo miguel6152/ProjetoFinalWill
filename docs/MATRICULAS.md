@@ -1,6 +1,6 @@
 # Matrículas
 
-O módulo oferece cadastro, consulta, cancelamento e encerramento de matrículas. A listagem é paginada e filtrável por aluno, plano e situação. A tela mostra os nomes atuais do aluno e do plano e o valor e as datas registrados na matrícula.
+O módulo oferece cadastro, consulta, cancelamento, encerramento e exclusão de matrículas. A listagem é paginada e filtrável por aluno, plano e situação. A tela mostra os nomes atuais do aluno e do plano e o valor e as datas registrados na matrícula.
 
 A tabela e suas chaves estrangeiras já existiam; não houve migration. A consulta usa SQL parametrizado e uma transação de leitura para manter contagem e página coerentes. A validação zod limita tamanho de página, IDs e situações, e verifica o offset. O processo main valida origem, sessão e identidade; somente administrador e recepção podem consultar, cadastrar, cancelar e encerrar.
 
@@ -8,4 +8,6 @@ Para conferir, execute `npm run dev`, entre como administrador ou recepção e a
 
 O cadastro rejeita intervalos inclusivos sobrepostos a outra matrícula ativa do mesmo aluno, mesmo com planos diferentes. Canceladas e encerradas não impedem o cadastro. A verificação e a inserção ocorrem na mesma transação `IMMEDIATE`, que serializa escritas concorrentes pelo SQLite. Essa garantia cobre cadastros feitos pelo serviço; alterações externas diretas no banco não passam por essa regra.
 
-Nos detalhes de uma matrícula ativa, **Cancelar matrícula** e **Encerrar matrícula** exigem confirmação. O encerramento só é permitido a partir do dia seguinte ao fim, conforme a data local do computador. Ambas as operações validam novamente a situação na transação; matrículas canceladas ou encerradas não podem ser reativadas ou alteradas por estes canais. Somente a coluna `situacao` é modificada, inclusive preservando `atualizado_em`, conforme o escopo desta etapa. Pagamentos e notificações permanecem intactos, sem efeitos automáticos; exclusão e política financeira ficam para etapas posteriores.
+Nos detalhes de uma matrícula ativa, **Cancelar matrícula** e **Encerrar matrícula** exigem confirmação. O encerramento só é permitido a partir do dia seguinte ao fim, conforme a data local do computador. Ambas as operações validam novamente a situação na transação; matrículas canceladas ou encerradas não podem ser reativadas ou alteradas por estes canais. Somente a coluna `situacao` é modificada, inclusive preservando `atualizado_em`, conforme o escopo desta etapa. Pagamentos e notificações permanecem intactos, sem efeitos automáticos; a política financeira fica para etapas posteriores.
+
+O administrador pode excluir uma matrícula nos detalhes, após confirmação; a recepção não tem essa permissão. A exclusão é bloqueada se houver pagamentos ou notificações vinculados, independentemente da situação. A checagem e exclusão ocorrem em transação e as chaves estrangeiras `RESTRICT` continuam protegendo o banco. Uma referência opaca do conteúdo consultado detecta alterações antes da exclusão e pede nova consulta; ela não substitui autorização nem garante distinguir uma recriação externa idêntica. Não se apagam registros vinculados.

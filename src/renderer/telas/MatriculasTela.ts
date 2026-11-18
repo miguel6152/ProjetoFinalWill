@@ -1,4 +1,4 @@
-import type { ListaMatriculas, MatriculaDto, PonteAcademia, Resultado } from '../../shared/ipc/ContratoIpc.js';
+import type { ListaMatriculas, MatriculaDto, PonteAcademia, Resultado, Perfil } from '../../shared/ipc/ContratoIpc.js';
 import { ValorMonetario } from '../componentes/ValorMonetario.js';
 
 export class MatriculasTela {
@@ -10,7 +10,7 @@ export class MatriculasTela {
   private readonly linhas = document.createElement('tbody');
   private readonly paginacao = document.createElement('div');
   private readonly detalhesArea = document.createElement('section');
-  public constructor(private readonly destino: HTMLElement, private readonly ponte: NonNullable<PonteAcademia['matriculas']>, private readonly sessaoInvalida: () => void) {}
+  public constructor(private readonly destino: HTMLElement, private readonly ponte: NonNullable<PonteAcademia['matriculas']>, private readonly sessaoInvalida: () => void, private readonly perfil: Perfil) {}
   public mostrar(): void {
     const titulo = document.createElement('h2'); titulo.textContent = 'Matrículas';
     const filtros = document.createElement('form'); filtros.id = 'filtros-matriculas'; filtros.className = 'ferramentas';
@@ -86,6 +86,21 @@ export class MatriculasTela {
       const encerrar = this.botao('Encerrar matrícula', () => this.confirmarSituacao(m, 'encerrar')); encerrar.id = 'encerrar-matricula';
       this.detalhesArea.append(cancelar, encerrar);
     }
+    if (this.perfil === 'admin' && m.referencia !== undefined) {
+      const excluir = this.botao('Excluir matrícula', () => this.confirmarExclusao(m)); excluir.id = 'excluir-matricula'; this.detalhesArea.append(excluir);
+    }
+  }
+  private confirmarExclusao(m: MatriculaDto): void {
+    const referencia = m.referencia;
+    if (referencia === undefined) return;
+    const texto = document.createElement('p'); texto.textContent = `Excluir definitivamente a matrícula ${m.id} de ${m.aluno_nome}? Matrículas com pagamentos ou notificações vinculados não podem ser excluídas.`;
+    const confirmar = this.botao('Confirmar exclusão', () => this.proteger(async () => {
+      this.exigir(await this.ponte.excluir({ id: m.id, referencia }));
+      if (!this.ativa) return;
+      this.detalhesArea.replaceChildren(); await this.carregar();
+      if (this.ativa) this.mensagem.textContent = 'Matrícula excluída.';
+    })); confirmar.id = 'confirmar-exclusao-matricula';
+    this.detalhesArea.replaceChildren(texto, confirmar, this.botao('Voltar', () => this.detalhes(m)));
   }
   private confirmarSituacao(m: MatriculaDto, acao: 'cancelar' | 'encerrar'): void {
     const texto = document.createElement('p'); texto.textContent = `Confirmar ${acao} da matrícula ${m.id} de ${m.aluno_nome}?`;

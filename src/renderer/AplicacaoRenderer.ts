@@ -87,7 +87,7 @@ class AplicacaoRenderer {
         if (window.academia.matriculas === undefined) return;
         this.usuarios?.encerrar(); this.usuarios = undefined; this.alunos?.encerrar(); this.alunos = undefined;
         this.planos?.encerrar(); this.planos = undefined; this.matriculas?.encerrar();
-        this.matriculas = new MatriculasTela(this.conteudo, window.academia.matriculas, () => this.login(false, 'Sua sessão terminou. Entre novamente.'));
+        this.matriculas = new MatriculasTela(this.conteudo, window.academia.matriculas, () => this.login(false, 'Sua sessão terminou. Entre novamente.'), usuario.perfil);
         this.matriculas.mostrar();
       });
       this.conta.append(matriculas);
