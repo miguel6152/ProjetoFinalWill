@@ -19,6 +19,8 @@ class VerificarPagamentos {
   private readonly janelas: BrowserWindow[] = [];
   private readonly senha = 'Credencial sintetica de pagamentos';
   public async executar(): Promise<void> {
+    process.env.MENSAGENS_MODO = 'simulado';
+    process.env.MENSAGENS_AUTOMATICAS = 'false';
     const pasta = mkdtempSync(path.join(tmpdir(), 'academia-pagamentos-')), arquivo = path.join(pasta, 'teste.sqlite3');
     const composicao = new Composicao(); let banco: Conexao | undefined, codigo = 0;
     const limite = setTimeout(() => app.exit(1), 60000); app.on('window-all-closed', () => {});
@@ -53,7 +55,14 @@ class VerificarPagamentos {
         j.webContents.executeJavaScript('window.academia.avisos.verificar(undefined)');
       this.falha(await verificarAvisos(recepcao), 'NAO_AUTENTICADO');
       this.falha(await verificarAvisos(instrutor), 'SEM_PERMISSAO');
+      const configurar = (j: BrowserWindow, dados: unknown): Promise<Resultado<unknown>> =>
+        j.webContents.executeJavaScript(`window.academia.avisos.configurar(${JSON.stringify(dados)})`);
+      const vinculo = { id: 1, chat: '123', autorizar: true };
+      this.falha(await configurar(instrutor,vinculo), 'SEM_PERMISSAO');
+      this.falha(await configurar(recepcao,vinculo), 'NAO_AUTENTICADO');
       await entrar(recepcao, 'recepcao');
+      this.falha(await configurar(recepcao,{ ...vinculo, chat: '-100123' }), 'VALIDACAO');
+      this.falha(await configurar(recepcao,{ ...vinculo, chat: null }), 'VALIDACAO');
       this.ok(await relatorio(recepcao, { ordem: 'valor' }));
       for (const filtro of [{ inicio: '2026-02-30' }, { inicio: '2026-04-01', fim: '2026-03-01' },
         { ordem: 'sql' }, { data_referencia: '2000-01-01' }]) {
@@ -138,6 +147,20 @@ class VerificarPagamentos {
       assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#avisos tbody .marcar-lido') === null"), true);
       assert.deepEqual(banco.preparar<[], unknown>("SELECT situacao,enviada_em,tentativas FROM notificacoes WHERE canal='interno' AND lido_em IS NOT NULL").all(),
         [{ situacao: 'pendente', enviada_em: null, tentativas: 0 }]);
+      await janela.webContents.executeJavaScript(`const prefs=document.querySelector('#avisos details'); prefs.open=true;
+        prefs.querySelector('[name=aluno]').value='1'; prefs.querySelector('form').requestSubmit()`);
+      await this.aguardar(janela, "document.querySelector('#avisos [name=chat]') !== null");
+      await janela.webContents.executeJavaScript(`const config=document.querySelector('#avisos [name=chat]').form;
+        config.elements.chat.value='123'; config.querySelector('[type=checkbox][required]').checked=true;
+        config.elements.consente.checked=true; config.requestSubmit()`);
+      await this.aguardar(janela, "document.querySelector('#avisos details').textContent.includes('Recebimento autorizado')");
+      await janela.webContents.executeJavaScript("document.querySelector('#avisos .abrir-entrega').click()");
+      await this.aguardar(janela, "document.querySelector('.processar-entrega')?.textContent === 'Simular entrega'");
+      await janela.webContents.executeJavaScript("document.querySelector('.processar-entrega').click()");
+      await this.aguardar(janela, "document.querySelector('#avisos').textContent.includes('Estado: simulado')");
+      assert.equal(await janela.webContents.executeJavaScript("document.querySelector('.processar-entrega') === null"),true);
+      assert.deepEqual(banco.preparar<[],unknown>('SELECT estado,mensagem_id FROM entrega_tentativas').all(),
+        [{estado:'simulado',mensagem_id:null}]);
       console.log('OK: lançamento, duplicidade, validação, perfis, quitação concorrente, histórico e R$ 100,00 após reabrir.');
     } catch (erro: unknown) { console.error(erro); codigo = 1; }
     finally {
