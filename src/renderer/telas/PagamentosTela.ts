@@ -64,6 +64,19 @@ export class PagamentosTela {
     void this.executar(() => this.listar());
   }
 
+  public mostrarRecebimento(id: number, voltar: (aviso?: string) => void): void {
+    this.painel.className = 'cartao';
+    this.painel.innerHTML = `<h2>Receber mensalidade</h2><p role="status"></p>
+      <fieldset><legend>Recebimento integral</legend><div id="detalhe-financeiro"></div>
+      <button type="button" class="voltar">Voltar à inadimplência</button></fieldset>`;
+    this.raiz.replaceChildren(this.painel);
+    this.painel.querySelector<HTMLButtonElement>('.voltar')!.onclick = () => voltar();
+    void this.executar(async () => {
+      const item = this.resultado(await this.api.obter({ id }));
+      this.detalhes(item, voltar);
+    });
+  }
+
   private formulario(id: string, acao: (dados: FormData) => Promise<string | void>): void {
     const form = this.painel.querySelector<HTMLFormElement>('#' + id)!;
     form.onsubmit = evento => {
@@ -117,7 +130,7 @@ export class PagamentosTela {
 
   private data(iso: string): string { return iso.slice(0, 10).split('-').reverse().join('/'); }
 
-  private detalhes(item: PagamentoDto): void {
+  private detalhes(item: PagamentoDto, voltar?: (aviso: string) => void): void {
     const detalhe = this.painel.querySelector('#detalhe-financeiro')!;
     detalhe.innerHTML = '<h3>Detalhes da mensalidade</h3><p></p>';
     const valor = ValorMonetario.formatar(item.valor_centavos);
@@ -136,6 +149,10 @@ export class PagamentosTela {
     this.formulario('recebimento', async dados => {
       const pago = this.resultado(await this.api.quitar({ id: item.id, data: String(dados.get('data')),
         forma_pagamento: dados.get('forma') as FormaPagamento }));
+      if (voltar) {
+        if (this.painel.isConnected) voltar('Recebimento integral registrado.');
+        return;
+      }
       await this.listar();
       this.detalhes(pago);
       return 'Recebimento integral registrado.';
