@@ -1,3 +1,6 @@
+import { Migracao004AvisosInternos } from '../database/migrations/Migracao004AvisosInternos';
+import { NotificacaoRepository } from '../repositories/NotificacaoRepository';
+import { AvisosService } from '../services/AvisosService';
 import { PagamentoHandler } from '../main/ipc/PagamentoHandler';
 import { PagamentoService } from '../services/PagamentoService';
 import { PagamentoRepository } from '../repositories/PagamentoRepository';
@@ -37,6 +40,8 @@ import { MatriculaService } from '../services/MatriculaService';
 import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private avisos: AvisosService | undefined;
+  private notificacoes: NotificacaoRepository | undefined;
   private pagamentos: PagamentoService | undefined;
   private pagamentoHandler: PagamentoHandler | undefined;
   private matriculas: MatriculaService | undefined;
@@ -67,7 +72,7 @@ export class Composicao {
     if (caminho !== ':memory:') mkdirSync(path.dirname(caminho), { recursive: true });
     const conexao: Conexao = new Conexao(caminho);
     try {
-      new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
+      new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos()]).executar();
       const dados = new ConsultaAutenticacaoRepository(conexao);
       this.sessoes = new SessaoManager(politica);
       this.autorizador = new Autorizador(this.sessoes, dados);
@@ -80,6 +85,9 @@ export class Composicao {
       this.pagamentos = new PagamentoService(new PagamentoRepository(conexao), matriculas, this.autorizador, this.sessoes);
       this.matriculas = new MatriculaService(matriculas, this.autorizador, this.sessoes);
       this.provisionamento = new ProvisionamentoService(new UsuarioRepository(conexao), new HashSenhaArgon2(), limitador);
+      this.notificacoes = new NotificacaoRepository(conexao);
+      this.avisos = new AvisosService(this.notificacoes);
+      this.avisos.iniciar();
       this.conexao = conexao;
     } catch (erro: unknown) {
       conexao.fechar();
@@ -88,6 +96,9 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.avisos?.encerrar();
+    this.avisos = undefined;
+    this.notificacoes = undefined;
     this.pagamentoHandler?.encerrar();
     this.pagamentoHandler = undefined;
     this.pagamentos = undefined;

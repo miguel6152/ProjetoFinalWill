@@ -1,15 +1,12 @@
+import { DataAcademia } from './DataAcademia';
 import type { PagamentoRepository } from '../repositories/PagamentoRepository';
 import type { DividaAluno, FiltroInadimplencia, ResumoInadimplencia } from '../shared/tipos/Inadimplencia';
 
 export class InadimplenciaService {
-  private static readonly calendario = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
-  });
-
   public constructor(private readonly pagamentos: PagamentoRepository) {}
 
   public consultar(filtro: FiltroInadimplencia, instante = new Date()): ResumoInadimplencia {
-    const hoje = InadimplenciaService.calendario.format(instante);
+    const hoje = DataAcademia.civil(instante);
     const grupos = new Map<number, DividaAluno>();
     let total = 0;
     // O repository devolve uma linha por cobrança, da mais antiga para a mais recente.
