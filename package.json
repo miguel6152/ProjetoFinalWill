@@ -8,6 +8,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "test:pagamentos": "npm run build && electron dist/tools/VerificarPagamentos.js",
     "test:matriculas": "npm run build && electron dist/tools/VerificarMatriculas.js",
     "test:planos": "npm run build && electron dist/tools/VerificarPlanos.js",
     "test:planos-interface": "npm run build && electron dist/tools/VerificarInterfacePlanos.js",
