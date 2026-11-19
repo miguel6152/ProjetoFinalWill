@@ -1,3 +1,5 @@
+import { EntregaService } from '../services/EntregaService';
+import { Migracao005Entregas } from '../database/migrations/Migracao005Entregas';
 import { AvisoHandler } from './ipc/AvisoHandler';
 import { Migracao004AvisosInternos } from '../database/migrations/Migracao004AvisosInternos';
 import { NotificacaoRepository } from '../repositories/NotificacaoRepository';
@@ -41,6 +43,7 @@ import { MatriculaService } from '../services/MatriculaService';
 import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private entregas: EntregaService | undefined;
   private avisoHandler: AvisoHandler | undefined;
   private avisos: AvisosService | undefined;
   private notificacoes: NotificacaoRepository | undefined;
@@ -74,7 +77,7 @@ export class Composicao {
     if (caminho !== ':memory:') mkdirSync(path.dirname(caminho), { recursive: true });
     const conexao: Conexao = new Conexao(caminho);
     try {
-      new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos()]).executar();
+      new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos(), new Migracao005Entregas()]).executar();
       const dados = new ConsultaAutenticacaoRepository(conexao);
       this.sessoes = new SessaoManager(politica);
       this.autorizador = new Autorizador(this.sessoes, dados);
@@ -90,6 +93,8 @@ export class Composicao {
       this.notificacoes = new NotificacaoRepository(conexao);
       this.avisos = new AvisosService(this.notificacoes);
       this.avisos.iniciar();
+      this.entregas = EntregaService.doAmbiente(this.notificacoes);
+      this.entregas.iniciar();
       this.conexao = conexao;
     } catch (erro: unknown) {
       conexao.fechar();
@@ -98,6 +103,8 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.entregas?.encerrar();
+    this.entregas = undefined;
     this.avisoHandler?.encerrar();
     this.avisoHandler = undefined;
     this.avisos?.encerrar();

@@ -1,3 +1,4 @@
+import { Migracao005Entregas } from '../src/database/migrations/Migracao005Entregas';
 import { Migracao004AvisosInternos } from '../src/database/migrations/Migracao004AvisosInternos';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, rmdirSync, unlinkSync } from 'node:fs';
@@ -188,7 +189,7 @@ class VerificarSegurancaAutenticacao {
   }
 
   private preparar(conexao: Conexao, digest: string): void {
-    new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos()]).executar();
+    new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos(), new Migracao005Entregas()]).executar();
     const inserir = conexao.preparar<[string, string, string, string, number], never>(
       `INSERT INTO usuarios (nome, email, senha_hash, perfil, ativo, criado_em, atualizado_em)
        VALUES (?, ?, ?, ?, ?, '2026-11-14', '2026-11-14')`);

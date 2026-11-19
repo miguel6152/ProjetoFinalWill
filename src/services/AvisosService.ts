@@ -9,13 +9,17 @@ export class AvisosService {
 
   public constructor(private readonly avisos: NotificacaoRepository) {}
 
+  public static marco(diasRestantes: number): number | undefined {
+    return diasRestantes < 0 ? undefined : this.marcos.find(dias => diasRestantes <= dias);
+  }
+
   public verificar(agora = new Date()): { criados: number } {
     const hoje = DataAcademia.civil(agora), instante = agora.toISOString();
     return this.avisos.transacao(() => {
       this.avisos.expirar(hoje, instante);
       let criados = 0;
       for (const m of this.avisos.vigencias(hoje, Math.max(...AvisosService.marcos))) {
-        const marco = AvisosService.marcos.find(dias => m.dias <= dias);
+        const marco = AvisosService.marco(m.dias);
         if (marco !== undefined) {
           criados += this.avisos.registrar({ matricula_id: m.id, tipo: 'vencimento_plano',
             data_alvo: m.data_fim, antecedencia_dias: marco }, instante);
