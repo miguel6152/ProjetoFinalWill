@@ -1,3 +1,4 @@
+import { DataAcademia } from '../src/services/DataAcademia';
 import type { PagamentoDto } from '../src/shared/tipos/Pagamento';
 import assert from 'node:assert/strict';
 import { app } from 'electron';
@@ -48,6 +49,10 @@ class VerificarPagamentos {
         j.webContents.executeJavaScript(`window.academia.pagamentos.inadimplentes(${JSON.stringify(entrada)})`);
       this.falha(await relatorio(instrutor, { ordem: 'valor' }), 'SEM_PERMISSAO');
       this.falha(await relatorio(recepcao, { ordem: 'atraso' }), 'NAO_AUTENTICADO');
+      const verificarAvisos = (j: BrowserWindow): Promise<Resultado<unknown>> =>
+        j.webContents.executeJavaScript('window.academia.avisos.verificar(undefined)');
+      this.falha(await verificarAvisos(recepcao), 'NAO_AUTENTICADO');
+      this.falha(await verificarAvisos(instrutor), 'SEM_PERMISSAO');
       await entrar(recepcao, 'recepcao');
       this.ok(await relatorio(recepcao, { ordem: 'valor' }));
       for (const filtro of [{ inicio: '2026-02-30' }, { inicio: '2026-04-01', fim: '2026-03-01' },
@@ -120,6 +125,19 @@ class VerificarPagamentos {
       await this.aguardar(janela, "document.querySelector('#inadimplencia [role=status]')?.textContent.includes('registrado')");
       assert.ok(await janela.webContents.executeJavaScript("document.querySelector('#inadimplencia summary').textContent.includes('Mensalidades: 1 · R$ 150,00')"));
       assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#inadimplencia form').elements.inicio.value"), '2000-01-31');
+      // Uma nova vigência, mesmo sem nova mensalidade, produz aviso pelo IPC.
+      banco = new Conexao(arquivo);
+      banco.preparar<[string], never>("UPDATE matriculas SET data_inicio='2000-01-01',data_fim=? WHERE id=1")
+        .run(DataAcademia.civil(new Date()));
+      await janela.webContents.executeJavaScript("document.querySelector('#abrir-avisos').click()");
+      await this.aguardar(janela, "document.querySelector('#avisos fieldset')?.disabled === false");
+      await janela.webContents.executeJavaScript("document.querySelector('#verificar-avisos').click()");
+      await this.aguardar(janela, "document.querySelector('#avisos tbody')?.textContent.includes('No dia do término')");
+      await janela.webContents.executeJavaScript("document.querySelector('#avisos tbody button').click()");
+      await this.aguardar(janela, "document.querySelector('#avisos [role=status]')?.textContent.includes('marcado como lido')");
+      assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#avisos tbody button') === null"), true);
+      assert.deepEqual(banco.preparar<[], unknown>("SELECT situacao,enviada_em,tentativas FROM notificacoes WHERE canal='interno' AND lido_em IS NOT NULL").all(),
+        [{ situacao: 'pendente', enviada_em: null, tentativas: 0 }]);
       console.log('OK: lançamento, duplicidade, validação, perfis, quitação concorrente, histórico e R$ 100,00 após reabrir.');
     } catch (erro: unknown) { console.error(erro); codigo = 1; }
     finally {
