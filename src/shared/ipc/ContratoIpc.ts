@@ -1,3 +1,4 @@
+import type { NovaMensalidade, Recebimento, PagamentoDto, FiltroPagamentos } from '../tipos/Pagamento';
 import type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 import type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
 import type { EnderecoDto } from '../tipos/Endereco';
@@ -35,6 +36,10 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface ContratoIpc {
+  'pagamentos:criar': { entrada: NovaMensalidade; saida: PagamentoDto };
+  'pagamentos:listar': { entrada: FiltroPagamentos; saida: Pagina<PagamentoDto> };
+  'pagamentos:obter': { entrada: { id: number }; saida: PagamentoDto };
+  'pagamentos:quitar': { entrada: Recebimento; saida: PagamentoDto };
   'matriculas:criar': { entrada: NovaMatricula; saida: MatriculaDto };
   'matriculas:cancelar': { entrada: { id: number }; saida: MatriculaDto };
   'matriculas:encerrar': { entrada: { id: number }; saida: MatriculaDto };
@@ -70,6 +75,12 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Capacidades só serão expostas quando seus handlers seguros forem implementados.
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
+  readonly pagamentos?: {
+    readonly criar: MetodoIpc<'pagamentos:criar'>;
+    readonly listar: MetodoIpc<'pagamentos:listar'>;
+    readonly obter: MetodoIpc<'pagamentos:obter'>;
+    readonly quitar: MetodoIpc<'pagamentos:quitar'>;
+  };
   readonly matriculas?: { readonly criar: MetodoIpc<'matriculas:criar'>; readonly listar: MetodoIpc<'matriculas:listar'>; readonly obter: MetodoIpc<'matriculas:obter'>; readonly cancelar: MetodoIpc<'matriculas:cancelar'>; readonly encerrar: MetodoIpc<'matriculas:encerrar'>; readonly excluir: MetodoIpc<'matriculas:excluir'> };
   readonly planos?: {
     readonly criar: MetodoIpc<'planos:criar'>;

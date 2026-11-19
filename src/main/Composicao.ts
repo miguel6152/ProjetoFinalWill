@@ -1,3 +1,6 @@
+import { PagamentoHandler } from '../main/ipc/PagamentoHandler';
+import { PagamentoService } from '../services/PagamentoService';
+import { PagamentoRepository } from '../repositories/PagamentoRepository';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { Conexao } from '../database/Conexao';
@@ -34,6 +37,8 @@ import { MatriculaService } from '../services/MatriculaService';
 import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private pagamentos: PagamentoService | undefined;
+  private pagamentoHandler: PagamentoHandler | undefined;
   private matriculas: MatriculaService | undefined;
   private matriculaHandler: MatriculaHandler | undefined;
   private planos: PlanoService | undefined;
@@ -71,7 +76,9 @@ export class Composicao {
       this.usuarios = new UsuarioService(new UsuarioRepository(conexao), new HashSenhaArgon2(), new Autorizador(this.sessoes, dados), this.sessoes);
       this.alunos = new AlunoService(new AlunoRepository(conexao), new Autorizador(this.sessoes, dados), this.sessoes);
       this.planos = new PlanoService(new PlanoRepository(conexao), this.autorizador, this.sessoes);
-      this.matriculas = new MatriculaService(new MatriculaRepository(conexao), this.autorizador, this.sessoes);
+      const matriculas = new MatriculaRepository(conexao);
+      this.pagamentos = new PagamentoService(new PagamentoRepository(conexao), matriculas, this.autorizador, this.sessoes);
+      this.matriculas = new MatriculaService(matriculas, this.autorizador, this.sessoes);
       this.provisionamento = new ProvisionamentoService(new UsuarioRepository(conexao), new HashSenhaArgon2(), limitador);
       this.conexao = conexao;
     } catch (erro: unknown) {
@@ -81,6 +88,9 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.pagamentoHandler?.encerrar();
+    this.pagamentoHandler = undefined;
+    this.pagamentos = undefined;
     this.matriculaHandler?.encerrar();
     this.matriculaHandler = undefined;
     this.matriculas = undefined;
@@ -112,6 +122,8 @@ export class Composicao {
     if (this.sessaoAutenticacao === undefined) throw new ErroAutenticacao('INTERNO');
     this.handler ??= new AutenticacaoHandler(this.sessaoAutenticacao, this.sessoes);
     this.handler.vincular(janela, url);
+    if (this.pagamentos === undefined) throw new ErroAutenticacao('INTERNO');
+    this.pagamentoHandler ??= new PagamentoHandler(this.pagamentos, this.handler);
     if (this.matriculas === undefined) throw new ErroAutenticacao('INTERNO');
     this.matriculaHandler ??= new MatriculaHandler(this.matriculas, this.handler);
     if (this.planos === undefined) throw new ErroAutenticacao('INTERNO');
