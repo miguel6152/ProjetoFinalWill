@@ -1,3 +1,4 @@
+import { MensagensTela } from './MensagensTela.js';
 import type { PonteAcademia, Resultado } from '../../shared/ipc/ContratoIpc.js';
 import type { AvisoDto, FiltroAvisos } from '../../shared/tipos/Aviso.js';
 
@@ -8,8 +9,12 @@ export class AvisosTela {
   private filtro: FiltroAvisos = { busca: '', estado: 'ativos' };
   private ocupado = false;
 
+  private readonly mensagens: MensagensTela;
+
   public constructor(private readonly raiz: HTMLElement, private readonly api: NonNullable<PonteAcademia['avisos']>,
-    private readonly sessaoEncerrada: () => void) {}
+    private readonly sessaoEncerrada: () => void) {
+    this.mensagens = new MensagensTela(api, sessaoEncerrada);
+  }
 
   public mostrar(): void {
     this.painel.id = 'avisos';
@@ -22,8 +27,9 @@ export class AvisosTela {
         <button>Filtrar</button><button type="button" id="verificar-avisos">Verificar agora</button>
       </form></fieldset>`;
     this.estado.setAttribute('role', 'status');
-    this.tabela.innerHTML = '<thead><tr><th>Aluno</th><th>Categoria</th><th>Término</th><th>Antecedência prevista</th><th>Status</th><th>Leitura</th></tr></thead><tbody></tbody>';
+    this.tabela.innerHTML = '<thead><tr><th>Aluno</th><th>Categoria</th><th>Término</th><th>Antecedência prevista</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody>';
     this.painel.querySelector('fieldset')!.append(this.estado, this.tabela);
+    this.mensagens.montar(this.painel);
     this.raiz.replaceChildren(this.painel);
     const form = this.painel.querySelector('form')!;
     form.onsubmit = evento => {
@@ -80,6 +86,7 @@ export class AvisosTela {
       const acao = linha.insertCell();
       if (!aviso.lido_em && !aviso.invalidado_em) {
         const ler = document.createElement('button');
+        ler.className = 'marcar-lido';
         ler.textContent = 'Marcar como lido';
         ler.onclick = () => this.executar(async () => {
           const { lido } = this.dados(await this.api.ler({ id: aviso.id }));
@@ -87,6 +94,11 @@ export class AvisosTela {
         });
         acao.append(ler);
       }
+      const entrega = document.createElement('button');
+      entrega.textContent = 'Entrega';
+      entrega.className = 'abrir-entrega';
+      entrega.onclick = () => this.mensagens.abrir(aviso.id,aviso.aluno_nome,aviso.data_alvo);
+      acao.append(entrega);
     }
   }
 }

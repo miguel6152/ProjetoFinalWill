@@ -1,3 +1,4 @@
+import type { AlterarPreferencia, EntregaDto, ModoEntrega, PreferenciaDto } from '../tipos/Entrega';
 import type { FiltroAvisos, AvisoDto } from '../tipos/Aviso';
 import type { FiltroInadimplencia, ResumoInadimplencia } from '../tipos/Inadimplencia';
 import type { NovaMensalidade, Recebimento, PagamentoDto, FiltroPagamentos } from '../tipos/Pagamento';
@@ -38,6 +39,10 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface ContratoIpc {
+  'avisos:entrega': { entrada: { id: number }; saida: EntregaDto };
+  'avisos:processar': { entrada: { id: number; modo: ModoEntrega }; saida: EntregaDto };
+  'avisos:preferencia': { entrada: { id: number }; saida: PreferenciaDto | null };
+  'avisos:configurar': { entrada: AlterarPreferencia; saida: { salvo: boolean } };
   'avisos:listar': { entrada: FiltroAvisos; saida: AvisoDto[] };
   'avisos:verificar': { entrada: undefined; saida: { criados: number } };
   'avisos:ler': { entrada: { id: number }; saida: { lido: boolean } };
@@ -82,6 +87,10 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
   readonly avisos?: {
+    readonly entrega: MetodoIpc<'avisos:entrega'>;
+    readonly processar: MetodoIpc<'avisos:processar'>;
+    readonly preferencia: MetodoIpc<'avisos:preferencia'>;
+    readonly configurar: MetodoIpc<'avisos:configurar'>;
     readonly listar: MetodoIpc<'avisos:listar'>;
     readonly verificar: MetodoIpc<'avisos:verificar'>;
     readonly ler: MetodoIpc<'avisos:ler'>;

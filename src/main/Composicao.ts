@@ -151,8 +151,8 @@ export class Composicao {
     if (this.planos === undefined) throw new ErroAutenticacao('INTERNO');
     this.planoHandler ??= new PlanoHandler(this.planos, this.handler);
     if (this.autorizador === undefined) throw new ErroAutenticacao('INTERNO');
-    if (!this.avisos || !this.notificacoes || !this.conexao) throw new ErroAutenticacao('INTERNO');
-    this.avisoHandler ??= new AvisoHandler(this.avisos, this.notificacoes, this.handler, this.autorizador,
+    if (!this.entregas || !this.avisos || !this.notificacoes || !this.conexao) throw new ErroAutenticacao('INTERNO');
+    this.avisoHandler ??= new AvisoHandler(this.entregas, this.avisos, this.notificacoes, this.handler, this.autorizador,
       this.sessoes, new PlanoRepository(this.conexao));
     this.enderecoHandler ??= new EnderecoHandler(this.viaCep, this.handler, this.autorizador, this.sessoes);
     if (this.alunos === undefined) throw new ErroAutenticacao('INTERNO');

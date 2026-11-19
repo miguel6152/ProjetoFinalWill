@@ -135,7 +135,7 @@ class VerificarPagamentos {
       await this.aguardar(janela, "document.querySelector('#avisos tbody')?.textContent.includes('No dia do término')");
       await janela.webContents.executeJavaScript("document.querySelector('#avisos tbody button').click()");
       await this.aguardar(janela, "document.querySelector('#avisos [role=status]')?.textContent.includes('marcado como lido')");
-      assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#avisos tbody button') === null"), true);
+      assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#avisos tbody .marcar-lido') === null"), true);
       assert.deepEqual(banco.preparar<[], unknown>("SELECT situacao,enviada_em,tentativas FROM notificacoes WHERE canal='interno' AND lido_em IS NOT NULL").all(),
         [{ situacao: 'pendente', enviada_em: null, tentativas: 0 }]);
       console.log('OK: lançamento, duplicidade, validação, perfis, quitação concorrente, histórico e R$ 100,00 após reabrir.');
