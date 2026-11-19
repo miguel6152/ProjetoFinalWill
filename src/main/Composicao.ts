@@ -1,3 +1,4 @@
+import { AvisoHandler } from './ipc/AvisoHandler';
 import { Migracao004AvisosInternos } from '../database/migrations/Migracao004AvisosInternos';
 import { NotificacaoRepository } from '../repositories/NotificacaoRepository';
 import { AvisosService } from '../services/AvisosService';
@@ -40,6 +41,7 @@ import { MatriculaService } from '../services/MatriculaService';
 import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private avisoHandler: AvisoHandler | undefined;
   private avisos: AvisosService | undefined;
   private notificacoes: NotificacaoRepository | undefined;
   private pagamentos: PagamentoService | undefined;
@@ -96,6 +98,8 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.avisoHandler?.encerrar();
+    this.avisoHandler = undefined;
     this.avisos?.encerrar();
     this.avisos = undefined;
     this.notificacoes = undefined;
@@ -140,6 +144,9 @@ export class Composicao {
     if (this.planos === undefined) throw new ErroAutenticacao('INTERNO');
     this.planoHandler ??= new PlanoHandler(this.planos, this.handler);
     if (this.autorizador === undefined) throw new ErroAutenticacao('INTERNO');
+    if (!this.avisos || !this.notificacoes || !this.conexao) throw new ErroAutenticacao('INTERNO');
+    this.avisoHandler ??= new AvisoHandler(this.avisos, this.notificacoes, this.handler, this.autorizador,
+      this.sessoes, new PlanoRepository(this.conexao));
     this.enderecoHandler ??= new EnderecoHandler(this.viaCep, this.handler, this.autorizador, this.sessoes);
     if (this.alunos === undefined) throw new ErroAutenticacao('INTERNO');
     this.alunoHandler ??= new AlunoHandler(this.alunos, this.handler);

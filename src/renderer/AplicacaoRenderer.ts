@@ -1,3 +1,4 @@
+import { AvisosTela } from './telas/AvisosTela.js';
 import { InadimplenciaTela } from './telas/InadimplenciaTela.js';
 import { PagamentosTela } from './telas/PagamentosTela.js';
 import type { UsuarioSessao } from '../shared/tipos/Autenticacao.js';
@@ -93,6 +94,19 @@ class AplicacaoRenderer {
         this.matriculas.mostrar();
       });
       this.conta.append(matriculas);
+      const avisos = document.createElement('button');
+      avisos.id = 'abrir-avisos';
+      avisos.textContent = 'Avisos';
+      avisos.onclick = () => {
+        if (!window.academia.avisos) return;
+        this.matriculas?.encerrar();
+        this.usuarios?.encerrar();
+        this.alunos?.encerrar();
+        this.planos?.encerrar();
+        new AvisosTela(this.conteudo, window.academia.avisos,
+          () => this.login(false, 'Sua sessão terminou. Entre novamente.')).mostrar();
+      };
+      this.conta.append(avisos);
       for (const [id, nome, Tela] of [
         ['abrir-mensalidades', 'Mensalidades', PagamentosTela],
         ['abrir-inadimplencia', 'Inadimplência', InadimplenciaTela]
