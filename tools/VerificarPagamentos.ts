@@ -44,7 +44,16 @@ class VerificarPagamentos {
         this.falha(await chamar(instrutor, metodo, novo), 'SEM_PERMISSAO');
         this.falha(await chamar(recepcao, metodo, novo), 'NAO_AUTENTICADO');
       }
+      const relatorio = (j: BrowserWindow, entrada: unknown): Promise<Resultado<unknown>> =>
+        j.webContents.executeJavaScript(`window.academia.pagamentos.inadimplentes(${JSON.stringify(entrada)})`);
+      this.falha(await relatorio(instrutor, { ordem: 'valor' }), 'SEM_PERMISSAO');
+      this.falha(await relatorio(recepcao, { ordem: 'atraso' }), 'NAO_AUTENTICADO');
       await entrar(recepcao, 'recepcao');
+      this.ok(await relatorio(recepcao, { ordem: 'valor' }));
+      for (const filtro of [{ inicio: '2026-02-30' }, { inicio: '2026-04-01', fim: '2026-03-01' },
+        { ordem: 'sql' }, { data_referencia: '2000-01-01' }]) {
+        this.falha(await relatorio(recepcao, { ordem: 'atraso', ...filtro }), 'VALIDACAO');
+      }
       for (const invalido of [{valor_centavos: 0}, {valor_centavos: -100}, {valor_centavos: 0.5},
         {matricula_id: 999}, {competencia: '2026-13'}, {data_vencimento: '2026-02-29'}]) {
         this.falha(await chamar(recepcao, 'criar', { ...novo, ...invalido }), 'VALIDACAO');
@@ -96,6 +105,21 @@ class VerificarPagamentos {
       await this.aguardar(janela, "document.querySelector('#mensalidades [role=status]').textContent.includes('integral registrado')");
       assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#mensalidades tbody').textContent"), 'Nenhuma mensalidade encontrada.');
       assert.ok(await janela.webContents.executeJavaScript("document.querySelector('#detalhe-financeiro').textContent.includes('31/03/2026 por dinheiro')"));
+      this.ok(await chamar(janela, 'criar', { ...novo, competencia: '2000-01', data_vencimento: '2000-01-31' }));
+      this.ok(await chamar(janela, 'criar', { ...novo, competencia: '2000-02', data_vencimento: '2000-02-29', valor_centavos: 15000 }));
+      await janela.webContents.executeJavaScript("document.querySelector('#abrir-inadimplencia').click()");
+      await this.aguardar(janela, "document.querySelector('#inadimplencia .resultado')?.textContent.includes('R$ 250,00')");
+      await janela.webContents.executeJavaScript(`const periodo=document.querySelector('#inadimplencia form');
+        periodo.elements.inicio.value='2000-01-31'; periodo.elements.fim.value='2000-02-29'; periodo.requestSubmit()`);
+      await this.aguardar(janela, "document.querySelector('#inadimplencia summary')?.textContent.includes('Mensalidades: 2')");
+      await janela.webContents.executeJavaScript(`document.querySelector('#inadimplencia details').open=true;
+        document.querySelector('#inadimplencia tbody button').click()`);
+      await this.aguardar(janela, "document.querySelector('#recebimento button')?.textContent.includes('R$ 100,00')");
+      await janela.webContents.executeJavaScript(`const baixaUI=document.querySelector('#recebimento');
+        baixaUI.elements.data.value='2000-03-01'; baixaUI.elements.forma.value='pix'; baixaUI.requestSubmit()`);
+      await this.aguardar(janela, "document.querySelector('#inadimplencia [role=status]')?.textContent.includes('registrado')");
+      assert.ok(await janela.webContents.executeJavaScript("document.querySelector('#inadimplencia summary').textContent.includes('Mensalidades: 1 · R$ 150,00')"));
+      assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#inadimplencia form').elements.inicio.value"), '2000-01-31');
       console.log('OK: lançamento, duplicidade, validação, perfis, quitação concorrente, histórico e R$ 100,00 após reabrir.');
     } catch (erro: unknown) { console.error(erro); codigo = 1; }
     finally {
