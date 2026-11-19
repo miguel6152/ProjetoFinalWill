@@ -26,7 +26,7 @@ Cada verificação roda em uma transação de escrita do SQLite. A chave única 
 
 `AvisosService.verificar` identifica eventos de vigência. O contrato TypeScript `EventoVencimento` contém matrícula, tipo, data-alvo e antecedência. `NotificacaoRepository.registrar` persiste o evento idempotentemente. A migração 004 acrescenta campos anuláveis e preserva os registros existentes. Registros antigos sem data-alvo continuam no banco e ficam fora da central.
 
-Para a etapa 4, a origem são os eventos internos válidos de `notificacoes` com `canal='interno'`, `invalidado_em IS NULL`, data-alvo preenchida e situação de entrega pendente. O ID e a chave de deduplicação identificam o evento para a futura entrega. A etapa de mensagens deverá revalidar vigência, consentimento e destino antes de reservar ou enviar. A leitura usa exclusivamente `lido_em`. A situação de entrega, as tentativas, a confirmação externa e `enviada_em` têm campos próprios. A etapa atual não aciona provedor.
+O processador da etapa 4 usa o ID do aviso interno e revalida matrícula, marco, chat e consentimento antes da entrega. A leitura usa exclusivamente `lido_em`. A migração 005 mantém o histórico de cada tentativa, com modos simulado e Telegram. Consulte [configuração, execução e demonstração](MENSAGENS.md).
 
 ## Demonstração
 

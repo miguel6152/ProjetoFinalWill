@@ -104,3 +104,7 @@ VerificarAlvosUsuarios reproduz a corrida com handler/autorizador/repository rea
 Os DTOs administrativos incluem `referencia`, um HMAC-SHA256 de ID e identidade persistente, com chave aleatória privada da instância do serviço. A interface oficial devolve essa referência ao atualizar, redefinir senha ou excluir. Uma conta substituta com o mesmo ID produz outra referência: o formulário antigo recebe `CONFLITO`, sem alteração ou revogação das sessões novas. A referência não revela a identidade interna e não concede autorização.
 
 O campo é opcional para compatibilidade com clientes anteriores. Sem ele, permanece a garantia da Etapa 5.3: a operação está vinculada à identidade capturada na entrada no Main, antes do primeiro `await`. A proteção adicional de uma visualização anterior à chamada exige a referência. Reiniciar a composição invalida referências anteriores; basta consultar novamente.
+
+## Mensagens de vencimento
+
+O Main reserva cada entrega em transação, revalida consentimento, destinatário e matrícula e usa uma URL HTTPS fixa para o Telegram. O preload expõe operações específicas para admin e recepção. O token fica no Main; as respostas de IPC e os logs não contêm credenciais nem a resposta bruta do provedor. O histórico distingue simulação, confirmação e resultado incerto. [Política de entrega e recuperação](docs/MENSAGENS.md).

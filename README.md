@@ -5,7 +5,7 @@ Aplicação desktop em **Electron + TypeScript** para gerenciar uma academia de 
 
 > Status: em desenvolvimento. [Matrículas](docs/MATRICULAS.md) permitem cadastro, consulta, cancelamento e encerramento para administrador e recepção; exclusão sem vínculos é exclusiva do administrador.
 
-A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e [matrículas](docs/MATRICULAS.md), integrados ao Electron. A frente do Vitor inclui [lançamento manual de mensalidades e quitação integral](docs/MENSALIDADES.md), [consulta de inadimplência por aluno](docs/INADIMPLENCIA.md) e [avisos internos de término do plano](docs/AVISOS.md). Aulas/avaliações e as outras três integrações de API ainda dependem das próximas entregas. Isso impede considerar o projeto completo pronto. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
+A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e [matrículas](docs/MATRICULAS.md), integrados ao Electron. A frente do Vitor inclui [lançamento manual de mensalidades e quitação integral](docs/MENSALIDADES.md), [consulta de inadimplência por aluno](docs/INADIMPLENCIA.md), [avisos internos de término do plano](docs/AVISOS.md) e [entrega pelo Telegram](docs/MENSAGENS.md). Aulas/avaliações, Open-Meteo e a API de relatórios ainda dependem das próximas entregas. Isso impede considerar o projeto completo pronto. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
 
 ## Integrantes
 
@@ -49,7 +49,7 @@ O diagrama completo está em [docs/ARQUITETURA.md](docs/ARQUITETURA.md). As migr
 |---|---|---|---|
 | 1 | ViaCEP | Preencher o endereço no cadastro de alunos | Implementado — Davi; consulta opcional com preenchimento manual |
 | 2 | Open-Meteo | Alertar chuva em aulas ao ar livre | Pendente — Julio |
-| 3 | API de mensagens (Telegram Bot ou e-mail) | Avisar o aluno sobre vencimento do plano | Pendente — Vitor |
+| 3 | Telegram Bot API | Avisar o aluno sobre vencimento do plano | Implementado — simulação padrão, envio real configurável, testes com mocks |
 | 4 | API própria (Express + TypeScript) | Relatórios de evolução física e frequência | Pendente — Julio |
 
 ## Segurança

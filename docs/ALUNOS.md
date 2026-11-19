@@ -28,7 +28,7 @@ Não há migration. A tabela `alunos` e todas as FKs permanecem intactas. E-mail
 
 CPF e CEP aceitam a apresentação usual e são armazenados somente com dígitos. Telefone aceita caracteres de formatação e é armazenado com 10 a 13 dígitos. E-mail usa trim e minúsculas. E-mail, telefone e complemento vazios no formulário viram `null`. Nome/endereço têm limites de tamanho; UF precisa ser válida. A data de nascimento é uma data civil real, sem mínimo de idade inventado; não pode ser posterior ao dia local do sistema.
 
-`telegram_chat_id` e `autorizado_notificar_em` são inicializados como nulos na criação, não entram em DTOs/formulários e são preservados na edição. A gestão de consentimento e envio pertence à frente do Vitor.
+`telegram_chat_id` e `autorizado_notificar_em` são inicializados como nulos na criação, não entram em DTOs/formulários e são preservados na edição. O vínculo e o consentimento são geridos por administrador ou recepção na [central de mensagens](MENSAGENS.md).
 
 ## Permissões e privacidade
 
