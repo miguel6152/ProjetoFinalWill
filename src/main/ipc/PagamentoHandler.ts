@@ -10,7 +10,7 @@ import { ErroAutenticacao } from '../seguranca/ErroAutenticacao';
 import { AutenticacaoHandler } from './AutenticacaoHandler';
 
 export class PagamentoHandler {
-  private readonly canais: readonly CanalPagamento[] = ['pagamentos:criar', 'pagamentos:listar', 'pagamentos:obter', 'pagamentos:quitar'];
+  private readonly canais: readonly CanalPagamento[] = ['pagamentos:inadimplentes', 'pagamentos:criar', 'pagamentos:listar', 'pagamentos:obter', 'pagamentos:quitar'];
   private encerrado = false;
   public constructor(private readonly servico: PagamentoService, private readonly origem: AutenticacaoHandler) {
     const registrados: CanalPagamento[] = [];

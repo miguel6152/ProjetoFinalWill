@@ -1,3 +1,4 @@
+import type { FiltroInadimplencia, ResumoInadimplencia } from '../tipos/Inadimplencia';
 import type { NovaMensalidade, Recebimento, PagamentoDto, FiltroPagamentos } from '../tipos/Pagamento';
 import type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 import type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
@@ -36,6 +37,7 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface ContratoIpc {
+  'pagamentos:inadimplentes': { entrada: FiltroInadimplencia; saida: ResumoInadimplencia };
   'pagamentos:criar': { entrada: NovaMensalidade; saida: PagamentoDto };
   'pagamentos:listar': { entrada: FiltroPagamentos; saida: Pagina<PagamentoDto> };
   'pagamentos:obter': { entrada: { id: number }; saida: PagamentoDto };
@@ -76,6 +78,7 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
   readonly pagamentos?: {
+    readonly inadimplentes: MetodoIpc<'pagamentos:inadimplentes'>;
     readonly criar: MetodoIpc<'pagamentos:criar'>;
     readonly listar: MetodoIpc<'pagamentos:listar'>;
     readonly obter: MetodoIpc<'pagamentos:obter'>;

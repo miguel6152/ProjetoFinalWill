@@ -1,3 +1,4 @@
+import { InadimplenciaService } from './InadimplenciaService';
 import { z } from 'zod';
 import type { ContratoIpc, Perfil } from '../shared/ipc/ContratoIpc';
 import type { ContextoSessao } from '../main/seguranca/ContratosAutenticacao';
@@ -12,6 +13,10 @@ export type CanalPagamento = Extract<keyof ContratoIpc, `pagamentos:${string}`>;
 const id = z.number().int().positive().safe();
 const competencia = z.string().regex(/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/);
 const data = z.iso.date().refine(d => !d.startsWith('0000'));
+const inadimplentes = z.object({
+  busca: z.string().trim().max(120).optional(), inicio: data.optional(), fim: data.optional(),
+  ordem: z.enum(['atraso', 'valor'])
+}).strict().refine(f => !f.inicio || !f.fim || f.inicio <= f.fim);
 const criar = z.object({ matricula_id: id, competencia, data_vencimento: data, valor_centavos: id }).strict();
 const receber = z.object({ id, data, forma_pagamento: z.enum(['pix','dinheiro','cartao','transferencia']) }).strict();
 const listar = z.object({
@@ -38,6 +43,8 @@ export class PagamentoService {
       }
       if (!perfis.includes(ator.perfil)) throw new ErroPagamento('SEM_PERMISSAO');
       switch (canal) {
+        case 'pagamentos:inadimplentes':
+          return new InadimplenciaService(this.pagamentos).consultar(inadimplentes.parse(entrada));
         case 'pagamentos:criar': {
           const dados = criar.parse(entrada);
           if (!this.matriculas.detalhes(dados.matricula_id)) throw new ErroPagamento('VALIDACAO', 'Matrícula não encontrada.');

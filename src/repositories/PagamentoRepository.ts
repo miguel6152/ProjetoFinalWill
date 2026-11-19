@@ -1,3 +1,4 @@
+import type { FiltroInadimplencia, MensalidadeVencida } from '../shared/tipos/Inadimplencia';
 import type { Conexao } from '../database/Conexao';
 import type { Pagamento } from '../models/Pagamento';
 import type { FiltroPagamentos, PagamentoDto, Recebimento } from '../shared/tipos/Pagamento';
@@ -43,6 +44,20 @@ export class PagamentoRepository extends BaseRepository<Pagamento, never> {
       PagamentoRepository.colunas + origem + ' ORDER BY p.data_vencimento, p.id LIMIT ? OFFSET ?'
     ).all(...valores, f.tamanho, (f.pagina - 1) * f.tamanho);
     return { itens, total, pagina: f.pagina, tamanho: f.tamanho };
+  }
+
+  public vencidas(filtro: FiltroInadimplencia, hoje: string) {
+    type Linha = MensalidadeVencida & { aluno_id: number; nome: string };
+    const busca = filtro.busca ?? '';
+    return this.conexao.preparar<[string, string, string, string, string, string], Linha>(
+      `SELECT p.id, p.matricula_id, p.competencia, p.data_vencimento, p.valor_centavos,
+        a.id AS aluno_id, a.nome, CAST(julianday(?) - julianday(p.data_vencimento) AS INTEGER) AS dias_atraso`
+      + PagamentoRepository.origem +
+      ` WHERE p.situacao='pendente' AND p.pago_em IS NULL AND p.valor_centavos > 0
+        AND p.data_vencimento < ? AND p.data_vencimento BETWEEN ? AND ?
+        AND (instr(lower(a.nome), lower(?)) > 0 OR CAST(a.id AS TEXT) = ?)
+        ORDER BY p.data_vencimento, p.id`
+    ).all(hoje, hoje, filtro.inicio ?? '0001-01-01', filtro.fim ?? '9999-12-31', busca, busca);
   }
 
   public quitar(dados: Recebimento): boolean {
