@@ -1,3 +1,4 @@
+import { PagamentosTela } from './telas/PagamentosTela.js';
 import type { UsuarioSessao } from '../shared/tipos/Autenticacao.js';
 import { LoginTela } from './telas/LoginTela.js';
 import { UsuariosTela } from './telas/UsuariosTela.js';
@@ -91,6 +92,19 @@ class AplicacaoRenderer {
         this.matriculas.mostrar();
       });
       this.conta.append(matriculas);
+      const financeiro = document.createElement('button');
+      financeiro.id = 'abrir-mensalidades';
+      financeiro.textContent = 'Mensalidades';
+      financeiro.onclick = () => {
+        if (!window.academia.pagamentos) return;
+        this.matriculas?.encerrar();
+        this.usuarios?.encerrar();
+        this.alunos?.encerrar();
+        this.planos?.encerrar();
+        new PagamentosTela(this.conteudo, window.academia.pagamentos,
+          () => this.login(false, 'Sua sessão terminou. Entre novamente.')).mostrar();
+      };
+      this.conta.append(financeiro);
     }
     if (usuario.perfil === 'admin') {
       const usuarios = document.createElement('button'); usuarios.type = 'button'; usuarios.id = 'abrir-usuarios'; usuarios.textContent = 'Usuários';
