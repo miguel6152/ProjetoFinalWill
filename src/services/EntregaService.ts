@@ -15,9 +15,9 @@ export class EntregaService {
     private readonly cliente: TelegramCliente, private readonly automatica: boolean,
     private readonly relogio: () => Date = () => new Date()) {}
 
-  public static doAmbiente(repo: NotificacaoRepository): EntregaService {
+  public static doAmbiente(repo: NotificacaoRepository, token: string | undefined): EntregaService {
     const modo = process.env.MENSAGENS_MODO === 'telegram' ? 'telegram' : 'simulado';
-    return new EntregaService(repo, modo, new TelegramCliente(process.env.TELEGRAM_BOT_TOKEN),
+    return new EntregaService(repo, modo, new TelegramCliente(token),
       process.env.MENSAGENS_AUTOMATICAS === 'true');
   }
 

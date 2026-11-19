@@ -67,7 +67,8 @@ export class Composicao {
   private provisionamento: ProvisionamentoService | undefined;
   private inicializacaoHandler: InicializacaoHandler | undefined;
 
-  public constructor(private readonly viaCep: ViaCepService = new ViaCepService()) {}
+  public constructor(private readonly viaCep: ViaCepService = new ViaCepService(),
+    private readonly telegramToken = process.env.TELEGRAM_BOT_TOKEN) {}
 
   public iniciar(caminho: string): void {
     if (this.conexao !== undefined) return;
@@ -93,7 +94,7 @@ export class Composicao {
       this.notificacoes = new NotificacaoRepository(conexao);
       this.avisos = new AvisosService(this.notificacoes);
       this.avisos.iniciar();
-      this.entregas = EntregaService.doAmbiente(this.notificacoes);
+      this.entregas = EntregaService.doAmbiente(this.notificacoes, this.telegramToken);
       this.entregas.iniciar();
       this.conexao = conexao;
     } catch (erro: unknown) {
