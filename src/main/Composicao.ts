@@ -37,10 +37,13 @@ import { ViaCepService } from '../services/ViaCepService';
 import { EnderecoHandler } from './ipc/EnderecoHandler';
 import { PlanoRepository } from '../repositories/PlanoRepository';
 import { InstrutorRepository } from '../repositories/InstrutorRepository';
+import { AulaRepository } from '../repositories/AulaRepository';
 import { PlanoService } from '../services/PlanoService';
 import { InstrutorService } from '../services/InstrutorService';
+import { AulaService } from '../services/AulaService';
 import { PlanoHandler } from './ipc/PlanoHandler';
 import { InstrutorHandler } from './ipc/InstrutorHandler';
+import { AulaHandler } from './ipc/AulaHandler';
 import { MatriculaRepository } from '../repositories/MatriculaRepository';
 import { MatriculaService } from '../services/MatriculaService';
 import { MatriculaHandler } from './ipc/MatriculaHandler';
@@ -56,8 +59,10 @@ export class Composicao {
   private matriculaHandler: MatriculaHandler | undefined;
   private planos: PlanoService | undefined;
   private instrutores: InstrutorService | undefined;
+  private aulas: AulaService | undefined;
   private planoHandler: PlanoHandler | undefined;
   private instrutorHandler: InstrutorHandler | undefined;
+  private aulaHandler: AulaHandler | undefined;
   private enderecoHandler: EnderecoHandler | undefined;
   private autorizador: Autorizador | undefined;
   private alunos: AlunoService | undefined;
@@ -93,6 +98,7 @@ export class Composicao {
       this.alunos = new AlunoService(new AlunoRepository(conexao), new Autorizador(this.sessoes, dados), this.sessoes);
       this.planos = new PlanoService(new PlanoRepository(conexao), this.autorizador, this.sessoes);
       this.instrutores = new InstrutorService(new InstrutorRepository(conexao), this.autorizador, this.sessoes);
+      this.aulas = new AulaService(new AulaRepository(conexao), this.autorizador, this.sessoes);
       const matriculas = new MatriculaRepository(conexao);
       this.pagamentos = new PagamentoService(new PagamentoRepository(conexao), matriculas, this.autorizador, this.sessoes);
       this.matriculas = new MatriculaService(matriculas, this.autorizador, this.sessoes);
@@ -125,10 +131,13 @@ export class Composicao {
     this.matriculas = undefined;
     this.planoHandler?.encerrar();
     this.instrutorHandler?.encerrar();
+    this.aulaHandler?.encerrar();
     this.planoHandler = undefined;
     this.instrutorHandler = undefined;
+    this.aulaHandler = undefined;
     this.planos = undefined;
     this.instrutores = undefined;
+    this.aulas = undefined;
     this.enderecoHandler?.encerrar();
     this.enderecoHandler = undefined;
     this.autorizador = undefined;
@@ -160,8 +169,10 @@ export class Composicao {
     this.matriculaHandler ??= new MatriculaHandler(this.matriculas, this.handler);
     if (this.planos === undefined) throw new ErroAutenticacao('INTERNO');
     if (this.instrutores === undefined) throw new ErroAutenticacao('INTERNO');
+    if (this.aulas === undefined) throw new ErroAutenticacao('INTERNO');
     this.planoHandler ??= new PlanoHandler(this.planos, this.handler);
     this.instrutorHandler ??= new InstrutorHandler(this.instrutores, this.handler);
+    this.aulaHandler ??= new AulaHandler(this.aulas, this.handler);
     if (this.autorizador === undefined) throw new ErroAutenticacao('INTERNO');
     if (!this.entregas || !this.avisos || !this.notificacoes || !this.conexao) throw new ErroAutenticacao('INTERNO');
     this.avisoHandler ??= new AvisoHandler(this.entregas, this.avisos, this.notificacoes, this.handler, this.autorizador,

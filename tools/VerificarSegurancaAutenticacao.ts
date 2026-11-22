@@ -239,7 +239,7 @@ class VerificarSegurancaAutenticacao {
       congelada: Object.isFrozen(window.academia) && Object.isFrozen(window.academia.autenticacao),
       require: typeof window.require, process: typeof window.process, ipc: typeof window.ipcRenderer,
       invoke: typeof window.academia.invoke, usuarios: typeof window.academia.usuarios
-    })`), { capacidades: ['autenticacao', 'usuarios', 'inicializacao', 'alunos', 'endereco', 'instrutores', 'planos', 'matriculas', 'pagamentos', 'avisos'], metodos: ['entrar', 'sessao', 'sair'], congelada: true,
+    })`), { capacidades: ['autenticacao', 'usuarios', 'inicializacao', 'alunos', 'endereco', 'aulas', 'instrutores', 'planos', 'matriculas', 'pagamentos', 'avisos'], metodos: ['entrar', 'sessao', 'sair'], congelada: true,
       require: 'undefined', process: 'undefined', ipc: 'undefined', invoke: 'undefined', usuarios: 'object' });
     const negada = await new JanelaPrincipal().abrir(false);
     this.janelas.push(negada);

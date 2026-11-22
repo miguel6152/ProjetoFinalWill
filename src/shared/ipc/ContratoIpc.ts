@@ -7,10 +7,12 @@ import type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../
 import type { EnderecoDto } from '../tipos/Endereco';
 import type { NovoPlano, PlanoDto } from '../tipos/Plano';
 import type { NovoInstrutor, InstrutorDto } from '../tipos/Instrutor';
+import type { NovaAula, AulaDto, FiltroAgenda } from '../tipos/Aula';
 import type { ListaMatriculas, MatriculaDto, NovaMatricula } from '../tipos/Matricula';
 export type { ListaMatriculas, MatriculaDto, NovaMatricula } from '../tipos/Matricula';
 export type { NovoPlano, PlanoDto } from '../tipos/Plano';
 export type { NovoInstrutor, InstrutorDto } from '../tipos/Instrutor';
+export type { NovaAula, AulaDto, FiltroAgenda } from '../tipos/Aula';
 export type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
 export type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 
@@ -61,14 +63,19 @@ export interface ContratoIpc {
   'matriculas:obter': { entrada: { id: number }; saida: MatriculaDto };
   'planos:criar': { entrada: NovoPlano; saida: PlanoDto };
   'instrutores:criar': { entrada: NovoInstrutor; saida: InstrutorDto };
+  'aulas:criar': { entrada: NovaAula; saida: AulaDto };
   'planos:listar': { entrada: EntradaLista; saida: Pagina<PlanoDto> };
   'instrutores:listar': { entrada: EntradaLista; saida: Pagina<InstrutorDto> };
+  'aulas:listar': { entrada: FiltroAgenda; saida: Pagina<AulaDto> };
   'planos:obter': { entrada: { id: number }; saida: PlanoDto };
   'instrutores:obter': { entrada: { id: number }; saida: InstrutorDto };
+  'aulas:obter': { entrada: { id: number }; saida: AulaDto };
   'planos:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovoPlano> }; saida: PlanoDto };
   'instrutores:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovoInstrutor> }; saida: InstrutorDto };
+  'aulas:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovaAula> }; saida: AulaDto };
   'planos:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'instrutores:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
+  'aulas:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'endereco:consultar-cep': { entrada: { cep: string }; saida: EnderecoDto };
   'alunos:criar': { entrada: NovoAluno; saida: AlunoDto };
   'alunos:listar': { entrada: EntradaLista; saida: Pagina<AlunoResumoDto> };
@@ -123,6 +130,13 @@ export interface PonteAcademia {
     readonly obter: MetodoIpc<'instrutores:obter'>;
     readonly atualizar: MetodoIpc<'instrutores:atualizar'>;
     readonly excluir: MetodoIpc<'instrutores:excluir'>;
+  };
+  readonly aulas?: {
+    readonly criar: MetodoIpc<'aulas:criar'>;
+    readonly listar: MetodoIpc<'aulas:listar'>;
+    readonly obter: MetodoIpc<'aulas:obter'>;
+    readonly atualizar: MetodoIpc<'aulas:atualizar'>;
+    readonly excluir: MetodoIpc<'aulas:excluir'>;
   };
   readonly endereco?: { readonly consultarCep: MetodoIpc<'endereco:consultar-cep'> };
   readonly alunos?: {

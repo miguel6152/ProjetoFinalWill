@@ -99,6 +99,7 @@ export type CompatibilidadeIpc = [
     'inicializacao:estado' | 'inicializacao:criar-admin' |
     'alunos:criar' | 'alunos:listar' | 'alunos:obter' | 'alunos:atualizar' | 'alunos:excluir' | 'endereco:consultar-cep' |
     'instrutores:criar' | 'instrutores:listar' | 'instrutores:obter' | 'instrutores:atualizar' | 'instrutores:excluir' |
+    'aulas:criar' | 'aulas:listar' | 'aulas:obter' | 'aulas:atualizar' | 'aulas:excluir' |
     'planos:criar' | 'planos:listar' | 'planos:obter' | 'planos:atualizar' | 'planos:excluir' |
     'avisos:entrega' | 'avisos:processar' | 'avisos:preferencia' | 'avisos:configurar' |
     'avisos:listar' | 'avisos:verificar' | 'avisos:ler' |
