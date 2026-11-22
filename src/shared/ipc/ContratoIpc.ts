@@ -9,12 +9,14 @@ import type { NovoPlano, PlanoDto } from '../tipos/Plano';
 import type { NovoInstrutor, InstrutorDto } from '../tipos/Instrutor';
 import type { NovaAula, AulaDto, FiltroAgenda } from '../tipos/Aula';
 import type { NovaInscricao, InscricaoDto, FiltroInscricoes } from '../tipos/Inscricao';
+import type { NovaAvaliacao, AvaliacaoDto, FiltroAvaliacoes } from '../tipos/Avaliacao';
 import type { ListaMatriculas, MatriculaDto, NovaMatricula } from '../tipos/Matricula';
 export type { ListaMatriculas, MatriculaDto, NovaMatricula } from '../tipos/Matricula';
 export type { NovoPlano, PlanoDto } from '../tipos/Plano';
 export type { NovoInstrutor, InstrutorDto } from '../tipos/Instrutor';
 export type { NovaAula, AulaDto, FiltroAgenda } from '../tipos/Aula';
 export type { NovaInscricao, InscricaoDto, FiltroInscricoes } from '../tipos/Inscricao';
+export type { NovaAvaliacao, AvaliacaoDto, FiltroAvaliacoes } from '../tipos/Avaliacao';
 export type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
 export type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 
@@ -67,22 +69,27 @@ export interface ContratoIpc {
   'instrutores:criar': { entrada: NovoInstrutor; saida: InstrutorDto };
   'aulas:criar': { entrada: NovaAula; saida: AulaDto };
   'inscricoes:criar': { entrada: NovaInscricao; saida: InscricaoDto };
+  'avaliacoes:criar': { entrada: NovaAvaliacao; saida: AvaliacaoDto };
   'planos:listar': { entrada: EntradaLista; saida: Pagina<PlanoDto> };
   'instrutores:listar': { entrada: EntradaLista; saida: Pagina<InstrutorDto> };
   'aulas:listar': { entrada: FiltroAgenda; saida: Pagina<AulaDto> };
   'inscricoes:listar': { entrada: FiltroInscricoes; saida: Pagina<InscricaoDto> };
+  'avaliacoes:listar': { entrada: FiltroAvaliacoes; saida: Pagina<AvaliacaoDto> };
   'planos:obter': { entrada: { id: number }; saida: PlanoDto };
   'instrutores:obter': { entrada: { id: number }; saida: InstrutorDto };
   'aulas:obter': { entrada: { id: number }; saida: AulaDto };
   'inscricoes:obter': { entrada: { id: number }; saida: InscricaoDto };
+  'avaliacoes:obter': { entrada: { id: number }; saida: AvaliacaoDto };
   'planos:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovoPlano> }; saida: PlanoDto };
   'instrutores:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovoInstrutor> }; saida: InstrutorDto };
   'aulas:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovaAula> }; saida: AulaDto };
   'inscricoes:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovaInscricao> }; saida: InscricaoDto };
+  'avaliacoes:atualizar': { entrada: { id: number; referencia: string; alteracoes: Partial<NovaAvaliacao> }; saida: AvaliacaoDto };
   'planos:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'instrutores:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'aulas:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'inscricoes:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
+  'avaliacoes:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'endereco:consultar-cep': { entrada: { cep: string }; saida: EnderecoDto };
   'alunos:criar': { entrada: NovoAluno; saida: AlunoDto };
   'alunos:listar': { entrada: EntradaLista; saida: Pagina<AlunoResumoDto> };
@@ -151,6 +158,13 @@ export interface PonteAcademia {
     readonly obter: MetodoIpc<'inscricoes:obter'>;
     readonly atualizar: MetodoIpc<'inscricoes:atualizar'>;
     readonly excluir: MetodoIpc<'inscricoes:excluir'>;
+  };
+  readonly avaliacoes?: {
+    readonly criar: MetodoIpc<'avaliacoes:criar'>;
+    readonly listar: MetodoIpc<'avaliacoes:listar'>;
+    readonly obter: MetodoIpc<'avaliacoes:obter'>;
+    readonly atualizar: MetodoIpc<'avaliacoes:atualizar'>;
+    readonly excluir: MetodoIpc<'avaliacoes:excluir'>;
   };
   readonly endereco?: { readonly consultarCep: MetodoIpc<'endereco:consultar-cep'> };
   readonly alunos?: {
