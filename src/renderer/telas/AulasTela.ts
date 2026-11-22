@@ -58,6 +58,22 @@ export class AulasTela {
       }), 'editar'),this.botao('Excluir', () => this.proteger(async () => {
         const atual = this.exigir(await this.ponte.obter({ id: aula.id })); if (this.ativa) this.confirmarExclusao(atual);
       }), 'excluir'));
+      if (aula.ao_ar_livre && window.academia.clima) acoes.append(this.botao('Previsão de chuva', () => this.proteger(async () => {
+        this.mensagem.textContent = 'Consultando previsão…';
+        const previsao = this.exigir(await window.academia.clima!.consultarAula({id:aula.id}));
+        if (!this.ativa) return;
+        this.edicao.replaceChildren();
+        const resumo = document.createElement('p');
+        resumo.textContent = `Origem: ${previsao.origem}. Consulta: ${HorarioAula.local(previsao.consultado_em)} (São Paulo). ${previsao.motivo ?? (previsao.alerta ? 'Alerta de chuva.' : 'Probabilidade abaixo do limiar.')} Limiar: ${previsao.limiar}%.`;
+        this.edicao.append(resumo);
+        for (const hora of previsao.horas) {
+          const linha = document.createElement('p');
+          linha.textContent = `${HorarioAula.local(hora.inicio_em)} até ${HorarioAula.local(hora.fim_em)} (São Paulo): ${hora.probabilidade_chuva === null ? 'Probabilidade indisponível' : hora.probabilidade_chuva + '%'} · ${hora.precipitacao_mm === null ? 'Precipitação indisponível' : hora.precipitacao_mm + ' mm'}`;
+          this.edicao.append(linha);
+        }
+        const fonte=document.createElement('p'); fonte.textContent='Dados meteorológicos Open-Meteo. Alerta informativo.';
+        this.edicao.append(fonte); this.mensagem.textContent='';
+      }), 'clima'));
       linha.append(acoes); this.linhas.append(linha);
     }
     if (pagina.itens.length === 0) {

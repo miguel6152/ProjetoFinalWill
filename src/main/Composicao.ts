@@ -1,3 +1,5 @@
+import { ClimaService } from '../services/ClimaService';
+import { ClimaHandler } from './ipc/ClimaHandler';
 import { EntregaService } from '../services/EntregaService';
 import { Migracao005Entregas } from '../database/migrations/Migracao005Entregas';
 import { AvisoHandler } from './ipc/AvisoHandler';
@@ -55,6 +57,7 @@ import { MatriculaService } from '../services/MatriculaService';
 import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private climaHandler: ClimaHandler | undefined;
   private entregas: EntregaService | undefined;
   private avisoHandler: AvisoHandler | undefined;
   private avisos: AvisosService | undefined;
@@ -88,7 +91,8 @@ export class Composicao {
   private inicializacaoHandler: InicializacaoHandler | undefined;
 
   public constructor(private readonly viaCep: ViaCepService = new ViaCepService(),
-    private readonly telegramToken = process.env.TELEGRAM_BOT_TOKEN) {}
+    private readonly telegramToken = process.env.TELEGRAM_BOT_TOKEN,
+    private readonly clima = new ClimaService()) {}
 
   public iniciar(caminho: string): void {
     if (this.conexao !== undefined) return;
@@ -128,6 +132,7 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.climaHandler?.encerrar(); this.climaHandler = undefined;
     this.entregas?.encerrar();
     this.entregas = undefined;
     this.avisoHandler?.encerrar();
@@ -192,6 +197,7 @@ export class Composicao {
     if (this.avaliacoes === undefined) throw new ErroAutenticacao('INTERNO');
     this.planoHandler ??= new PlanoHandler(this.planos, this.handler);
     this.instrutorHandler ??= new InstrutorHandler(this.instrutores, this.handler);
+    this.climaHandler ??= new ClimaHandler(this.clima, this.aulas, this.handler, this.sessoes);
     this.aulaHandler ??= new AulaHandler(this.aulas, this.handler);
     this.inscricaoHandler ??= new InscricaoHandler(this.inscricoes, this.handler);
     this.avaliacaoHandler ??= new AvaliacaoHandler(this.avaliacoes, this.handler);
