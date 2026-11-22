@@ -8,6 +8,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "test:inscricoes": "npm run build && electron dist/tools/VerificarInscricoes.js",
     "test:aulas": "npm run build && electron dist/tools/VerificarAulas.js && electron dist/tools/VerificarInterfaceAulas.js",
     "test:instrutores": "npm run build && electron dist/tools/VerificarInstrutores.js && electron dist/tools/VerificarInterfaceInstrutores.js",
     "test:entregas": "npm run build && node dist/tools/VerificarEntregas.js",
