@@ -1,4 +1,5 @@
 import type { Conexao } from '../database/Conexao';
+import { DataAcademia } from '../services/DataAcademia';
 import type { Aula } from '../models/Aula';
 import type { FiltroAgenda, Pagina } from '../shared/ipc/ContratoIpc';
 import type { IdentidadeAutenticada } from '../main/seguranca/ContratosAutenticacao';
@@ -40,6 +41,14 @@ export class AulaRepository extends BaseRepository<Aula> {
   public ocupacao(id: number): number {
     return this.conexao.preparar<[number], { total: number }>(
       "SELECT COUNT(*) AS total FROM inscricoes_aula WHERE aula_id = ? AND situacao = 'ativa'").get(id)!.total;
+  }
+
+  public matriculasValidas(id:number, inicio:string):boolean {
+    const dia=DataAcademia.civil(new Date(inicio));
+    const invalidas=this.conexao.preparar<[number,string,string],{total:number}>(`SELECT COUNT(*) total FROM inscricoes_aula s
+      JOIN alunos a ON a.id=s.aluno_id WHERE s.aula_id=? AND s.situacao='ativa' AND
+      (a.ativo<>1 OR NOT EXISTS (SELECT 1 FROM matriculas m WHERE m.aluno_id=s.aluno_id AND m.situacao='ativa' AND m.data_inicio<=? AND m.data_fim>=?))`).get(id,dia,dia)!.total;
+    return invalidas===0;
   }
 
   public listar(filtro: FiltroAgenda, usuarioId: number | null): Pagina<Aula> {

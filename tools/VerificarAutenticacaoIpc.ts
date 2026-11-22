@@ -82,7 +82,7 @@ class VerificarAutenticacaoIpc {
       assert.deepEqual(await janela.webContents.executeJavaScript('window.academia.autenticacao.sessao()'), esperado);
       this.falha(await seguro.atender('auth:sessao', evento, [{ usuarioId: 1 }]), 'VALIDACAO');
       const ponte = await janela.webContents.executeJavaScript(`({chaves:Object.keys(window.academia), metodos:Object.keys(window.academia.autenticacao), require:typeof window.require, process:typeof window.process})`);
-      assert.deepEqual(ponte, { chaves: ['autenticacao', 'usuarios', 'inicializacao', 'alunos', 'endereco', 'aulas', 'instrutores', 'planos', 'matriculas', 'pagamentos', 'avisos'], metodos: ['entrar', 'sessao', 'sair'], require: 'undefined', process: 'undefined' });
+      assert.deepEqual(ponte, { chaves: ['autenticacao', 'usuarios', 'inicializacao', 'alunos', 'endereco', 'inscricoes', 'aulas', 'instrutores', 'planos', 'matriculas', 'pagamentos', 'avisos'], metodos: ['entrar', 'sessao', 'sair'], require: 'undefined', process: 'undefined' });
       conexao.preparar<[], never>("UPDATE usuarios SET perfil = 'instrutor' WHERE id = 1").run();
       const atualizado = await janela.webContents.executeJavaScript('window.academia.autenticacao.sessao()');
       assert.deepEqual(atualizado, { sucesso: true, dados: { usuario: { id: 1, nome: 'Sintético', perfil: 'instrutor' } } });

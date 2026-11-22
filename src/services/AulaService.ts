@@ -60,6 +60,7 @@ export class AulaService {
       const agendamento = completos.situacao === 'agendada' || completos.instrutor_id !== atual.instrutor_id;
       this.validarAula(completos, ator.perfil, ator.id, agendamento);
       if (completos.capacidade < this.repository.ocupacao(id)) throw new ErroAula('CONFLITO');
+      if (completos.inicio_em !== atual.inicio_em && !this.repository.matriculasValidas(id, completos.inicio_em)) throw new ErroAula('CONFLITO');
       const atualizado = this.repository.update(alvo.id, completos);
       if (atualizado === undefined) throw new ErroAula('NAO_ENCONTRADO');
       return this.dto(atualizado);
