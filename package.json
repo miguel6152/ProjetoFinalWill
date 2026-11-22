@@ -8,6 +8,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "test:clima": "npm run build && node dist/tools/VerificarClima.js && electron dist/tools/VerificarClimaIpc.js && electron dist/tools/VerificarInterfaceClima.js",
     "test:avaliacoes": "npm run build && electron dist/tools/VerificarAvaliacoes.js && electron dist/tools/VerificarInterfaceAvaliacoes.js",
     "test:inscricoes": "npm run build && electron dist/tools/VerificarInscricoes.js",
     "test:aulas": "npm run build && electron dist/tools/VerificarAulas.js && electron dist/tools/VerificarInterfaceAulas.js",
