@@ -40,6 +40,34 @@ class PonteAcademia {
       atualizar: entrada => ipcRenderer.invoke('planos:atualizar', entrada),
       excluir: entrada => ipcRenderer.invoke('planos:excluir', entrada)
     });
+    const instrutores: NonNullable<ContratoPonte['instrutores']> = Object.freeze({
+      criar: entrada => ipcRenderer.invoke('instrutores:criar', entrada),
+      listar: entrada => ipcRenderer.invoke('instrutores:listar', entrada),
+      obter: entrada => ipcRenderer.invoke('instrutores:obter', entrada),
+      atualizar: entrada => ipcRenderer.invoke('instrutores:atualizar', entrada),
+      excluir: entrada => ipcRenderer.invoke('instrutores:excluir', entrada)
+    });
+    const aulas: NonNullable<ContratoPonte['aulas']> = Object.freeze({
+      criar: entrada => ipcRenderer.invoke('aulas:criar', entrada),
+      listar: entrada => ipcRenderer.invoke('aulas:listar', entrada),
+      obter: entrada => ipcRenderer.invoke('aulas:obter', entrada),
+      atualizar: entrada => ipcRenderer.invoke('aulas:atualizar', entrada),
+      excluir: entrada => ipcRenderer.invoke('aulas:excluir', entrada)
+    });
+    const inscricoes: NonNullable<ContratoPonte['inscricoes']> = Object.freeze({
+      criar: entrada => ipcRenderer.invoke('inscricoes:criar', entrada),
+      listar: entrada => ipcRenderer.invoke('inscricoes:listar', entrada),
+      obter: entrada => ipcRenderer.invoke('inscricoes:obter', entrada),
+      atualizar: entrada => ipcRenderer.invoke('inscricoes:atualizar', entrada),
+      excluir: entrada => ipcRenderer.invoke('inscricoes:excluir', entrada)
+    });
+    const avaliacoes: NonNullable<ContratoPonte['avaliacoes']> = Object.freeze({
+      criar: entrada => ipcRenderer.invoke('avaliacoes:criar', entrada),
+      listar: entrada => ipcRenderer.invoke('avaliacoes:listar', entrada),
+      obter: entrada => ipcRenderer.invoke('avaliacoes:obter', entrada),
+      atualizar: entrada => ipcRenderer.invoke('avaliacoes:atualizar', entrada),
+      excluir: entrada => ipcRenderer.invoke('avaliacoes:excluir', entrada)
+    });
     const matriculas: NonNullable<ContratoPonte['matriculas']> = Object.freeze({
       criar: entrada => ipcRenderer.invoke('matriculas:criar', entrada),
       cancelar: entrada => ipcRenderer.invoke('matriculas:cancelar', entrada),
@@ -64,7 +92,14 @@ class PonteAcademia {
       verificar: entrada => ipcRenderer.invoke('avisos:verificar', entrada),
       ler: entrada => ipcRenderer.invoke('avisos:ler', entrada)
     });
-    const capacidades: Readonly<ContratoPonte> = Object.freeze({ autenticacao, usuarios, inicializacao, alunos, endereco, planos, matriculas, pagamentos, avisos });
+    const clima: NonNullable<ContratoPonte['clima']> = Object.freeze({
+      consultarAula: entrada => ipcRenderer.invoke('clima:consultar-aula', entrada)
+    });
+    const relatorios: NonNullable<ContratoPonte['relatorios']> = Object.freeze({
+      evolucao: entrada => ipcRenderer.invoke('relatorios:evolucao', entrada),
+      frequencia: entrada => ipcRenderer.invoke('relatorios:frequencia', entrada)
+    });
+    const capacidades: Readonly<ContratoPonte> = Object.freeze({ relatorios, clima, autenticacao, usuarios, inicializacao, alunos, endereco, avaliacoes, inscricoes, aulas, instrutores, planos, matriculas, pagamentos, avisos });
     contextBridge.exposeInMainWorld('academia', capacidades);
   }
 }

@@ -5,7 +5,7 @@ Aplicação desktop em **Electron + TypeScript** para gerenciar uma academia de 
 
 > Status: em desenvolvimento. [Matrículas](docs/MATRICULAS.md) permitem cadastro, consulta, cancelamento e encerramento para administrador e recepção; exclusão sem vínculos é exclusiva do administrador.
 
-A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e [matrículas](docs/MATRICULAS.md), integrados ao Electron. A frente do Vitor inclui [lançamento manual de mensalidades e quitação integral](docs/MENSALIDADES.md), [consulta de inadimplência por aluno](docs/INADIMPLENCIA.md), [avisos internos de término do plano](docs/AVISOS.md) e [entrega pelo Telegram](docs/MENSAGENS.md). Aulas/avaliações, Open-Meteo e a API de relatórios ainda dependem das próximas entregas. Isso impede considerar o projeto completo pronto. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
+A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e [matrículas](docs/MATRICULAS.md), integrados ao Electron. A frente do Vitor inclui [lançamento manual de mensalidades e quitação integral](docs/MENSALIDADES.md), [consulta de inadimplência por aluno](docs/INADIMPLENCIA.md), [avisos internos de término do plano](docs/AVISOS.md) e [entrega pelo Telegram](docs/MENSAGENS.md). A frente do Julio inclui instrutores, aulas, inscrições/chamada, avaliações, Open-Meteo e relatórios consumidos por HTTP no Main. Veja a [entrega e evidências do Julio](docs/ENTREGA_JULIO.md) e suas pendências de revisão e homologação coletiva. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
 
 ## Integrantes
 
@@ -32,7 +32,7 @@ O dono da academia precisa de um sistema que:
 - Electron
 - TypeScript (toda a lógica da aplicação, sem JavaScript)
 - SQLite (`better-sqlite3`)
-- Express + TypeScript (API própria prevista, ainda não implementada)
+- Express + TypeScript (API própria em loopback, integrada aos relatórios)
 - Argon2id (hash de senhas, decisão da etapa 4.2)
 - zod (validação de entradas)
 
@@ -48,9 +48,9 @@ O diagrama completo está em [docs/ARQUITETURA.md](docs/ARQUITETURA.md). As migr
 | # | API prevista | Finalidade no sistema | Estado |
 |---|---|---|---|
 | 1 | ViaCEP | Preencher o endereço no cadastro de alunos | Implementado — Davi; consulta opcional com preenchimento manual |
-| 2 | Open-Meteo | Alertar chuva em aulas ao ar livre | Pendente — Julio |
+| 2 | Open-Meteo | Alertar chuva em aulas ao ar livre | Implementado — testes com transporte simulado e origem identificada |
 | 3 | Telegram Bot API | Avisar o aluno sobre vencimento do plano | Implementado — simulação padrão, envio real configurável, testes com mocks |
-| 4 | API própria (Express + TypeScript) | Relatórios de evolução física e frequência | Pendente — Julio |
+| 4 | API própria (Express + TypeScript) | Relatórios de evolução física e frequência | Implementado — telas, IPC e consumo HTTP real em loopback |
 
 ## Segurança
 

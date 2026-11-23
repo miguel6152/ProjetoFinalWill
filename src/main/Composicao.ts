@@ -1,3 +1,12 @@
+import { ClimaService } from '../services/ClimaService';
+import { RelatorioRepository } from '../repositories/RelatorioRepository';
+import { RelatorioService } from '../services/RelatorioService';
+import { ConsultaRelatorioService } from '../services/ConsultaRelatorioService';
+import { RelatorioHandler } from './ipc/RelatorioHandler';
+import { CredenciaisRelatorios } from '../api/CredenciaisRelatorios';
+import { ServidorRelatorios } from '../api/ServidorRelatorios';
+import type { ContextoSessao } from './seguranca/ContratosAutenticacao';
+import { ClimaHandler } from './ipc/ClimaHandler';
 import { EntregaService } from '../services/EntregaService';
 import { Migracao005Entregas } from '../database/migrations/Migracao005Entregas';
 import { AvisoHandler } from './ipc/AvisoHandler';
@@ -36,13 +45,29 @@ import { AlunoHandler } from './ipc/AlunoHandler';
 import { ViaCepService } from '../services/ViaCepService';
 import { EnderecoHandler } from './ipc/EnderecoHandler';
 import { PlanoRepository } from '../repositories/PlanoRepository';
+import { InstrutorRepository } from '../repositories/InstrutorRepository';
+import { AulaRepository } from '../repositories/AulaRepository';
+import { InscricaoRepository } from '../repositories/InscricaoRepository';
+import { AvaliacaoRepository } from '../repositories/AvaliacaoRepository';
 import { PlanoService } from '../services/PlanoService';
+import { InstrutorService } from '../services/InstrutorService';
+import { AulaService } from '../services/AulaService';
+import { InscricaoService } from '../services/InscricaoService';
+import { AvaliacaoService } from '../services/AvaliacaoService';
 import { PlanoHandler } from './ipc/PlanoHandler';
+import { InstrutorHandler } from './ipc/InstrutorHandler';
+import { AulaHandler } from './ipc/AulaHandler';
+import { InscricaoHandler } from './ipc/InscricaoHandler';
+import { AvaliacaoHandler } from './ipc/AvaliacaoHandler';
 import { MatriculaRepository } from '../repositories/MatriculaRepository';
 import { MatriculaService } from '../services/MatriculaService';
 import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private relatorioHandler: RelatorioHandler | undefined;
+  private apiRelatorios: ServidorRelatorios | undefined;
+  private credenciaisRelatorios: CredenciaisRelatorios | undefined;
+  private climaHandler: ClimaHandler | undefined;
   private entregas: EntregaService | undefined;
   private avisoHandler: AvisoHandler | undefined;
   private avisos: AvisosService | undefined;
@@ -52,7 +77,15 @@ export class Composicao {
   private matriculas: MatriculaService | undefined;
   private matriculaHandler: MatriculaHandler | undefined;
   private planos: PlanoService | undefined;
+  private instrutores: InstrutorService | undefined;
+  private aulas: AulaService | undefined;
+  private inscricoes: InscricaoService | undefined;
+  private avaliacoes: AvaliacaoService | undefined;
   private planoHandler: PlanoHandler | undefined;
+  private instrutorHandler: InstrutorHandler | undefined;
+  private aulaHandler: AulaHandler | undefined;
+  private inscricaoHandler: InscricaoHandler | undefined;
+  private avaliacaoHandler: AvaliacaoHandler | undefined;
   private enderecoHandler: EnderecoHandler | undefined;
   private autorizador: Autorizador | undefined;
   private alunos: AlunoService | undefined;
@@ -68,7 +101,8 @@ export class Composicao {
   private inicializacaoHandler: InicializacaoHandler | undefined;
 
   public constructor(private readonly viaCep: ViaCepService = new ViaCepService(),
-    private readonly telegramToken = process.env.TELEGRAM_BOT_TOKEN) {}
+    private readonly telegramToken = process.env.TELEGRAM_BOT_TOKEN,
+    private readonly clima = new ClimaService()) {}
 
   public iniciar(caminho: string): void {
     if (this.conexao !== undefined) return;
@@ -87,6 +121,10 @@ export class Composicao {
       this.usuarios = new UsuarioService(new UsuarioRepository(conexao), new HashSenhaArgon2(), new Autorizador(this.sessoes, dados), this.sessoes);
       this.alunos = new AlunoService(new AlunoRepository(conexao), new Autorizador(this.sessoes, dados), this.sessoes);
       this.planos = new PlanoService(new PlanoRepository(conexao), this.autorizador, this.sessoes);
+      this.instrutores = new InstrutorService(new InstrutorRepository(conexao), this.autorizador, this.sessoes);
+      this.aulas = new AulaService(new AulaRepository(conexao), this.autorizador, this.sessoes);
+      this.inscricoes = new InscricaoService(new InscricaoRepository(conexao), this.autorizador, this.sessoes);
+      this.avaliacoes = new AvaliacaoService(new AvaliacaoRepository(conexao), this.autorizador, this.sessoes);
       const matriculas = new MatriculaRepository(conexao);
       this.pagamentos = new PagamentoService(new PagamentoRepository(conexao), matriculas, this.autorizador, this.sessoes);
       this.matriculas = new MatriculaService(matriculas, this.autorizador, this.sessoes);
@@ -97,6 +135,10 @@ export class Composicao {
       this.entregas = EntregaService.doAmbiente(this.notificacoes, this.telegramToken);
       this.entregas.iniciar();
       this.conexao = conexao;
+      this.credenciaisRelatorios = new CredenciaisRelatorios(this.sessoes);
+      this.apiRelatorios = new ServidorRelatorios(
+        new ConsultaRelatorioService(new RelatorioRepository(conexao), this.autorizador, this.sessoes), this.credenciaisRelatorios);
+      void this.apiRelatorios.iniciar(Number(process.env.API_RELATORIOS_PORTA ?? 0));
     } catch (erro: unknown) {
       conexao.fechar();
       throw erro;
@@ -104,6 +146,9 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.relatorioHandler?.encerrar(); this.relatorioHandler = undefined;
+    this.encerrarApiRelatorios();
+    this.climaHandler?.encerrar(); this.climaHandler = undefined;
     this.entregas?.encerrar();
     this.entregas = undefined;
     this.avisoHandler?.encerrar();
@@ -118,8 +163,20 @@ export class Composicao {
     this.matriculaHandler = undefined;
     this.matriculas = undefined;
     this.planoHandler?.encerrar();
+    this.instrutorHandler?.encerrar();
+    this.aulaHandler?.encerrar();
+    this.inscricaoHandler?.encerrar();
+    this.avaliacaoHandler?.encerrar();
     this.planoHandler = undefined;
+    this.instrutorHandler = undefined;
+    this.aulaHandler = undefined;
+    this.inscricaoHandler = undefined;
+    this.avaliacaoHandler = undefined;
     this.planos = undefined;
+    this.instrutores = undefined;
+    this.aulas = undefined;
+    this.inscricoes = undefined;
+    this.avaliacoes = undefined;
     this.enderecoHandler?.encerrar();
     this.enderecoHandler = undefined;
     this.autorizador = undefined;
@@ -150,8 +207,19 @@ export class Composicao {
     if (this.matriculas === undefined) throw new ErroAutenticacao('INTERNO');
     this.matriculaHandler ??= new MatriculaHandler(this.matriculas, this.handler);
     if (this.planos === undefined) throw new ErroAutenticacao('INTERNO');
+    if (this.instrutores === undefined) throw new ErroAutenticacao('INTERNO');
+    if (this.aulas === undefined) throw new ErroAutenticacao('INTERNO');
+    if (this.inscricoes === undefined) throw new ErroAutenticacao('INTERNO');
+    if (this.avaliacoes === undefined) throw new ErroAutenticacao('INTERNO');
     this.planoHandler ??= new PlanoHandler(this.planos, this.handler);
+    this.instrutorHandler ??= new InstrutorHandler(this.instrutores, this.handler);
+    this.climaHandler ??= new ClimaHandler(this.clima, this.aulas, this.handler, this.sessoes);
+    this.aulaHandler ??= new AulaHandler(this.aulas, this.handler);
+    this.inscricaoHandler ??= new InscricaoHandler(this.inscricoes, this.handler);
+    this.avaliacaoHandler ??= new AvaliacaoHandler(this.avaliacoes, this.handler);
     if (this.autorizador === undefined) throw new ErroAutenticacao('INTERNO');
+    this.relatorioHandler ??= new RelatorioHandler(new RelatorioService(contexto => this.acessoRelatorios(contexto, true),
+      this.autorizador, this.sessoes), this.handler, this.sessoes);
     if (!this.entregas || !this.avisos || !this.notificacoes || !this.conexao) throw new ErroAutenticacao('INTERNO');
     this.avisoHandler ??= new AvisoHandler(this.entregas, this.avisos, this.notificacoes, this.handler, this.autorizador,
       this.sessoes, new PlanoRepository(this.conexao));
@@ -168,5 +236,22 @@ export class Composicao {
   public obterAutenticacao(): AutenticacaoService {
     if (this.autenticacao === undefined) throw new ErroAutenticacao('INTERNO');
     return this.autenticacao;
+  }
+
+  /** Acessível somente aos componentes do Main. */
+  public acessoRelatorios(contexto: ContextoSessao, reutilizar = false): {endereco:string;token:string} {
+    const endereco=this.apiRelatorios?.estado().endereco;
+    if(!endereco || !this.credenciaisRelatorios) throw new ErroAutenticacao('INTERNO');
+    return {endereco,token:this.credenciaisRelatorios.emitir(contexto, reutilizar)};
+  }
+
+  public estadoRelatorios(): {endereco:string|null;erro:string|null} {
+    return this.apiRelatorios?.estado() ?? {endereco:null,erro:'API encerrada.'};
+  }
+
+  /** Ciclo de vida interno do Main; não exposto pelo preload. */
+  public encerrarApiRelatorios(): void {
+    this.apiRelatorios?.encerrar(); this.apiRelatorios = undefined;
+    this.credenciaisRelatorios = undefined;
   }
 }
