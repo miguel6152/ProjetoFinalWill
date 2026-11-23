@@ -1,6 +1,6 @@
 import { ServidorRelatorios } from '../src/api/ServidorRelatorios';
 import { CredenciaisRelatorios } from '../src/api/CredenciaisRelatorios';
-import { RelatorioService } from '../src/services/RelatorioService';
+import { ConsultaRelatorioService } from '../src/services/ConsultaRelatorioService';
 import { RelatorioRepository } from '../src/repositories/RelatorioRepository';
 import assert from 'node:assert/strict';
 import { app } from 'electron';
@@ -90,7 +90,7 @@ class VerificarApiRelatorios {
       assert.equal(contagem.itens[0]?.percentual_presenca,null);
       assert.equal(contagem.itens[0]?.presentes,0);
       assert.equal(contagem.itens[0]?.nao_registradas,1);
-      const bloqueado=new ServidorRelatorios(new RelatorioService(new RelatorioRepository(banco),
+      const bloqueado=new ServidorRelatorios(new ConsultaRelatorioService(new RelatorioRepository(banco),
         new Autorizador(new SessaoManager(),new ConsultaAutenticacaoRepository(banco)),new SessaoManager()),
         new CredenciaisRelatorios(new SessaoManager()));
       assert.equal(await bloqueado.iniciar(porta),false);assert.ok(bloqueado.estado().erro);bloqueado.encerrar();

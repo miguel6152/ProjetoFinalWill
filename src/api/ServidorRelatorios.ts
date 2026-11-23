@@ -1,6 +1,6 @@
 import express from 'express';
 import type { Server } from 'node:http';
-import type { RelatorioService } from '../services/RelatorioService';
+import type { ConsultaRelatorioService } from '../services/ConsultaRelatorioService';
 import type { CredenciaisRelatorios } from './CredenciaisRelatorios';
 import { ErroAutenticacao } from '../main/seguranca/ErroAutenticacao';
 
@@ -9,7 +9,7 @@ export class ServidorRelatorios {
   private encerrado=false;
   private endereco:string|null=null;
   private falha:string|null=null;
-  public constructor(private readonly consultas:RelatorioService,private readonly credenciais:CredenciaisRelatorios) {}
+  public constructor(private readonly consultas:ConsultaRelatorioService,private readonly credenciais:CredenciaisRelatorios) {}
   public estado(){return {endereco:this.endereco,erro:this.falha};}
   public iniciar(porta=0):Promise<boolean> {
     if(this.servidor || this.encerrado) return Promise.resolve(false);

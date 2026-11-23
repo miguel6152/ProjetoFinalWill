@@ -7,9 +7,13 @@ export class CredenciaisRelatorios {
   private readonly registros=new Map<string,{contexto:ContextoSessao;sessao:Readonly<SessaoInterna>;versao:symbol;expira:number}>();
   public constructor(private readonly sessoes:SessaoManager,private readonly agora:()=>number=Date.now) {}
   /** Uso exclusivo do Main. Credenciais nunca integram contratos do preload. */
-  public emitir(contexto:ContextoSessao):string {
+  public emitir(contexto:ContextoSessao, reutilizar = false):string {
     const sessao=this.sessoes.obter(contexto);
     if(!sessao) throw new ErroAutenticacao('NAO_AUTENTICADO');
+    if (reutilizar) for (const [token, registro] of this.registros) {
+      if (registro.sessao === sessao && registro.contexto.webContentsId === contexto.webContentsId
+        && registro.expira > this.agora() && registro.versao === this.sessoes.versao(contexto)) return token;
+    }
     for(const [token,registro] of this.registros){
       if(registro.expira<=this.agora() || registro.contexto.webContentsId===contexto.webContentsId) this.registros.delete(token);
     }

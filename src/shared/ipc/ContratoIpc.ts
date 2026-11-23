@@ -1,4 +1,5 @@
 import type { ClimaDto } from '../tipos/Clima';
+import type { FiltroRelatorio, EvolucaoDto, FrequenciaDto } from '../tipos/Relatorio';
 import type { AlterarPreferencia, EntregaDto, ModoEntrega, PreferenciaDto } from '../tipos/Entrega';
 import type { FiltroAvisos, AvisoDto } from '../tipos/Aviso';
 import type { FiltroInadimplencia, ResumoInadimplencia } from '../tipos/Inadimplencia';
@@ -48,6 +49,8 @@ export interface NovoUsuario {
   ativo: number;
 }
 export interface ContratoIpc {
+  'relatorios:evolucao': { entrada: Omit<FiltroRelatorio, 'aula_id'> & { aluno_id: number }; saida: EvolucaoDto };
+  'relatorios:frequencia': { entrada: FiltroRelatorio; saida: FrequenciaDto };
   'clima:consultar-aula': {entrada:{id:number};saida:ClimaDto};
   'avisos:entrega': { entrada: { id: number }; saida: EntregaDto };
   'avisos:processar': { entrada: { id: number; modo: ModoEntrega }; saida: EntregaDto };
@@ -116,6 +119,7 @@ export type MetodoIpc<C extends keyof ContratoIpc> =
 // Capacidades só serão expostas quando seus handlers seguros forem implementados.
 // Não publicar invoke, nomes de canais ou métodos que simulem funcionalidades futuras.
 export interface PonteAcademia {
+  readonly relatorios?: { readonly evolucao: MetodoIpc<'relatorios:evolucao'>; readonly frequencia: MetodoIpc<'relatorios:frequencia'> };
   readonly clima?: { readonly consultarAula: MetodoIpc<'clima:consultar-aula'> };
   readonly avisos?: {
     readonly entrega: MetodoIpc<'avisos:entrega'>;
