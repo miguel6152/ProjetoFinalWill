@@ -8,6 +8,17 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "test:integracao-julio": "npm run build && electron dist/tools/VerificarIntegracaoJulio.js",
+    "test:api-relatorios": "npm run build && electron dist/tools/VerificarApiRelatorios.js",
+    "test:clima": "npm run build && node dist/tools/VerificarClima.js && electron dist/tools/VerificarClimaIpc.js && electron dist/tools/VerificarInterfaceClima.js",
+    "test:avaliacoes": "npm run build && electron dist/tools/VerificarAvaliacoes.js && electron dist/tools/VerificarInterfaceAvaliacoes.js",
+    "test:inscricoes": "npm run build && electron dist/tools/VerificarInscricoes.js",
+    "test:aulas": "npm run build && electron dist/tools/VerificarAulas.js && electron dist/tools/VerificarInterfaceAulas.js",
+    "test:instrutores": "npm run build && electron dist/tools/VerificarInstrutores.js && electron dist/tools/VerificarInterfaceInstrutores.js",
+    "test:entregas": "npm run build && node dist/tools/VerificarEntregas.js",
+    "test:avisos": "npm run build && node dist/tools/VerificarAvisos.js",
+    "test:inadimplencia": "npm run build && node dist/tools/VerificarInadimplencia.js",
+    "test:pagamentos": "npm run build && electron dist/tools/VerificarPagamentos.js",
     "test:matriculas": "npm run build && electron dist/tools/VerificarMatriculas.js",
     "test:planos": "npm run build && electron dist/tools/VerificarPlanos.js",
     "test:planos-interface": "npm run build && electron dist/tools/VerificarInterfacePlanos.js",
@@ -38,13 +49,15 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.0.0",
     "electron": "45.3.2",
     "typescript": "7.0.2"
   },
   "dependencies": {
-    "better-sqlite3": "13.1.1",
     "argon2": "0.45.2",
+    "better-sqlite3": "13.1.1",
+    "express": "^5.3.0",
     "zod": "4.6.7"
   },
   "allowScripts": {

@@ -7,6 +7,8 @@ class Aplicacao {
   private readonly composicao: Composicao = new Composicao();
 
   public iniciar(): void {
+    // A composição já capturou o token no Main. Os processos das janelas não precisam herdá-lo.
+    delete process.env.TELEGRAM_BOT_TOKEN;
     app.on('before-quit', (): void => this.composicao.encerrar());
     app.on('window-all-closed', (): void => {
       if (process.platform !== 'darwin') app.quit();

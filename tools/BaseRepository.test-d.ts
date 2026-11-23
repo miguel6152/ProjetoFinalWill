@@ -94,10 +94,17 @@ export type CompatibilidadeIpc = [
   ExigirVerdade<Igual<ContratoIpc['usuarios:listar']['entrada'], EntradaListaAnterior>>,
   ExigirVerdade<Igual<ContratoIpc['usuarios:listar']['saida'], PaginaAnterior<UsuarioDto>>>,
   ExigirVerdade<Igual<keyof ContratoIpc,
-    'auth:entrar' | 'auth:sessao' | 'auth:sair' | 'usuarios:criar' | 'usuarios:listar' |
+    'relatorios:evolucao' | 'relatorios:frequencia' | 'clima:consultar-aula' | 'auth:entrar' | 'auth:sessao' | 'auth:sair' | 'usuarios:criar' | 'usuarios:listar' |
     'usuarios:obter' | 'usuarios:atualizar' | 'usuarios:excluir' | 'usuarios:alterar-senha' |
     'inicializacao:estado' | 'inicializacao:criar-admin' |
     'alunos:criar' | 'alunos:listar' | 'alunos:obter' | 'alunos:atualizar' | 'alunos:excluir' | 'endereco:consultar-cep' |
+    'instrutores:criar' | 'instrutores:listar' | 'instrutores:obter' | 'instrutores:atualizar' | 'instrutores:excluir' |
+    'aulas:criar' | 'aulas:listar' | 'aulas:obter' | 'aulas:atualizar' | 'aulas:excluir' |
+    'inscricoes:criar' | 'inscricoes:listar' | 'inscricoes:obter' | 'inscricoes:atualizar' | 'inscricoes:excluir' |
+    'avaliacoes:criar' | 'avaliacoes:listar' | 'avaliacoes:obter' | 'avaliacoes:atualizar' | 'avaliacoes:excluir' |
     'planos:criar' | 'planos:listar' | 'planos:obter' | 'planos:atualizar' | 'planos:excluir' |
+    'avisos:entrega' | 'avisos:processar' | 'avisos:preferencia' | 'avisos:configurar' |
+    'avisos:listar' | 'avisos:verificar' | 'avisos:ler' |
+    'pagamentos:inadimplentes' | 'pagamentos:criar' | 'pagamentos:listar' | 'pagamentos:obter' | 'pagamentos:quitar' |
     'matriculas:criar' | 'matriculas:listar' | 'matriculas:obter' | 'matriculas:cancelar' | 'matriculas:encerrar' | 'matriculas:excluir'>>
 ];

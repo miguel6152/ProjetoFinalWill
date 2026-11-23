@@ -4,6 +4,12 @@ Documento de arquitetura baseado no `AGENTS.md` e no `README.md`. As decisões m
 
 ## 1. Visão geral e limites das camadas
 
+Relatórios (etapa 6 do Julio): a [API local de relatórios](API_RELATORIOS.md) está implementada em Express no Main, compartilhando sua conexão SQLite. Oferece evolução física e frequência com autorização por sessão, perfil e escopo. O consumo HTTP integrado às telas está entregue na [etapa 7](ENTREGA_JULIO.md); as referências históricas à API planejada abaixo antecedem esta entrega.
+
+Avisos internos: a [central de avisos](AVISOS.md) usa os marcos de 7, 3 e 0 dias antes do término de matrículas ativas. A migração 004 registra data-alvo, antecedência, leitura e invalidação em notificações. A [entrega pelo Telegram](MENSAGENS.md) usa a migração 005 e o mesmo aviso; a simulação é o padrão.
+
+Financeiro: a [consulta de inadimplência](INADIMPLENCIA.md) usa as mensalidades da etapa de pagamentos e o dia civil de São Paulo. Admin e recepção podem consultar e abrir a baixa integral.
+
 Matrículas: cadastro, consulta, cancelamento e encerramento foram integrados ao Electron com autorização de admin e recepção. A exclusão física sem pagamentos ou notificações vinculados é exclusiva do admin. O cadastro bloqueia sobreposição inclusiva de matrículas ativas do mesmo aluno, independentemente do plano, em transação de escrita. O encerramento é permitido após o último dia contratado. Ver [MATRICULAS.md](MATRICULAS.md). Regras financeiras continuam pendentes.
 
 Atualização da frente do Davi: CRUD de alunos, ViaCEP e CRUD de planos integrados ao Main/preload/renderer, reutilizando schema e sessões, sem migrations. Regras e testes estão em [ALUNOS.md](ALUNOS.md), [VIACEP.md](VIACEP.md) e [PLANOS.md](PLANOS.md). Planos preservam preço/datas contratados das matrículas, aceitam valor zero e mantêm FK RESTRICT na exclusão. Os trechos históricos abaixo sobre domínios ausentes descrevem o estado anterior a essas entregas. Matrículas continuam para uma etapa posterior.

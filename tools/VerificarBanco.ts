@@ -1,3 +1,5 @@
+import { Migracao005Entregas } from '../src/database/migrations/Migracao005Entregas';
+import { Migracao004AvisosInternos } from '../src/database/migrations/Migracao004AvisosInternos';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -275,7 +277,7 @@ class VerificarBanco {
       const historico = conexao.preparar<[], unknown>('SELECT * FROM migrations').all();
       conexao.fechar();
       conexao = new Conexao(caminho);
-      new Migrador(conexao, [this.migracao, new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
+      new Migrador(conexao, [this.migracao, new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos(), new Migracao005Entregas()]).executar();
       assert.deepEqual(conexao.preparar<[], unknown>('SELECT * FROM migrations').all(), historico);
       assert.equal(conexao.preparar<[], { nome: string }>('SELECT nome FROM planos WHERE id=1').get()?.nome, 'Persistente Fictício');
       assert.equal(conexao.preparar<[], { foreign_keys: number }>('PRAGMA foreign_keys').get()?.foreign_keys, 1);
