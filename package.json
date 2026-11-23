@@ -8,6 +8,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "test:integracao-julio": "npm run build && electron dist/tools/VerificarIntegracaoJulio.js",
     "test:api-relatorios": "npm run build && electron dist/tools/VerificarApiRelatorios.js",
     "test:clima": "npm run build && node dist/tools/VerificarClima.js && electron dist/tools/VerificarClimaIpc.js && electron dist/tools/VerificarInterfaceClima.js",
     "test:avaliacoes": "npm run build && electron dist/tools/VerificarAvaliacoes.js && electron dist/tools/VerificarInterfaceAvaliacoes.js",

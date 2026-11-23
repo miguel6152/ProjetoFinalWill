@@ -131,7 +131,7 @@ export class AvaliacoesTela {
     const confirmar = this.botao('Confirmar exclusão',() => this.proteger(async () => {
       this.exigir(await this.ponte.excluir({ id: avaliacao.id, referencia: avaliacao.referencia }));
       if (!this.ativa) return;
-      this.edicao.replaceChildren(); this.mensagem.textContent = 'Inscrição excluída.'; this.pagina = 1; await this.carregar();
+      this.edicao.replaceChildren(); this.mensagem.textContent = 'Avaliação excluída.'; this.pagina = 1; await this.carregar();
     })); confirmar.id = 'confirmar-exclusao-avaliacao';
     this.edicao.replaceChildren(texto,confirmar,this.botao('Cancelar',() => this.edicao.replaceChildren()));
   }

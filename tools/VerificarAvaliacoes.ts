@@ -56,6 +56,7 @@ class VerificarAvaliacoes {
       assert.deepEqual(lista.itens.map(x=>x.id),[primeira.id,segunda.id]);
       assert.equal(lista.itens[1]!.peso_kg-lista.itens[0]!.peso_kg,-2);
       this.ok(await this.chamar(i,'avaliacoes:obter',{id:segunda.id}));
+      this.falha(await this.chamar(i,'avaliacoes:excluir',{id:segunda.id,referencia:segunda.referencia}),'SEM_PERMISSAO');
       this.falha(await this.chamar(i,'avaliacoes:atualizar',{id:segunda.id,referencia:segunda.referencia,alteracoes:{peso_kg:65}}),'SEM_PERMISSAO');
       this.falha(await this.chamar(i,'avaliacoes:criar',{...dados,instrutor_id:bia.id}),'SEM_PERMISSAO');
       for (const invalido of [{peso_kg:0},{cintura_cm:0},{altura_cm:-1},{realizada_em:'2026-02-30'}])

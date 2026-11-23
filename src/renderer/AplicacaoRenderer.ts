@@ -1,3 +1,4 @@
+import { RelatoriosTela } from './telas/RelatoriosTela.js';
 import { AvisosTela } from './telas/AvisosTela.js';
 import { InadimplenciaTela } from './telas/InadimplenciaTela.js';
 import { PagamentosTela } from './telas/PagamentosTela.js';
@@ -14,6 +15,7 @@ import { MatriculasTela } from './telas/MatriculasTela.js';
 
 class AplicacaoRenderer {
   private matriculas: MatriculasTela | undefined;
+  private relatorios: RelatoriosTela | undefined;
   private geracao = 0;
   private avaliacoes: AvaliacoesTela | undefined;
   private inscricoes: InscricoesTela | undefined;
@@ -40,7 +42,7 @@ class AplicacaoRenderer {
   }
 
   private login(inicial: boolean, mensagem?: string): void {
-    this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.matriculas = undefined;
+    this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.matriculas = undefined;
     this.geracao++; this.usuarios?.encerrar(); this.usuarios = undefined; this.conta.replaceChildren();
     this.alunos?.encerrar(); this.alunos = undefined;
     this.planos?.encerrar(); this.planos = undefined;
@@ -61,7 +63,7 @@ class AplicacaoRenderer {
   }
 
   private painel(usuario: UsuarioSessao): void {
-    this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.matriculas = undefined;
+    this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.matriculas = undefined;
     this.planos?.encerrar(); this.planos = undefined;
     this.geracao++; this.usuarios?.encerrar(); this.estado.textContent = 'Sessão iniciada';
     this.alunos?.encerrar(); this.alunos = undefined;
@@ -74,7 +76,7 @@ class AplicacaoRenderer {
     this.conta.replaceChildren(nome, sair);
     const alunos = document.createElement('button'); alunos.type = 'button'; alunos.id = 'abrir-alunos'; alunos.textContent = 'Alunos';
     alunos.addEventListener('click', () => {
-      this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.matriculas = undefined;
+      this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.matriculas = undefined;
       if (window.academia.alunos === undefined) return;
       this.planos?.encerrar(); this.planos = undefined;
       this.usuarios?.encerrar(); this.usuarios = undefined; this.alunos?.encerrar();
@@ -90,7 +92,7 @@ class AplicacaoRenderer {
       this.alunos?.encerrar();
       this.planos?.encerrar();
       this.matriculas?.encerrar();
-      this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar();
+      this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar();
       this.instrutores = new InstrutoresTela(this.conteudo, window.academia.instrutores, usuario.perfil, () => this.login(false));
       this.instrutores.mostrar();
     };
@@ -102,7 +104,7 @@ class AplicacaoRenderer {
       this.alunos?.encerrar();
       this.planos?.encerrar();
       this.matriculas?.encerrar();
-      this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar();
+      this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar();
       this.aulas = new AulasTela(this.conteudo, window.academia.aulas, usuario.perfil, () => this.login(false));
       this.aulas.mostrar();
     };
@@ -114,7 +116,7 @@ class AplicacaoRenderer {
       this.alunos?.encerrar();
       this.planos?.encerrar();
       this.matriculas?.encerrar();
-      this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar();
+      this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar();
       this.inscricoes = new InscricoesTela(this.conteudo, window.academia.inscricoes, usuario.perfil, () => this.login(false));
       this.inscricoes.mostrar();
     };
@@ -127,7 +129,7 @@ class AplicacaoRenderer {
       this.alunos?.encerrar();
       this.planos?.encerrar();
       this.matriculas?.encerrar();
-      this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar();
+      this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar();
       this.avaliacoes = new AvaliacoesTela(this.conteudo, window.academia.avaliacoes, usuario.perfil, () => this.login(false));
       this.avaliacoes.mostrar();
     };
@@ -136,7 +138,7 @@ class AplicacaoRenderer {
     if (usuario.perfil === 'admin' || usuario.perfil === 'recepcao') {
       const planos = document.createElement('button'); planos.type = 'button'; planos.id = 'abrir-planos'; planos.textContent = 'Planos';
       planos.addEventListener('click',() => {
-        this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.matriculas = undefined;
+        this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.matriculas = undefined;
         if (window.academia.planos === undefined) return;
         this.usuarios?.encerrar(); this.usuarios = undefined; this.alunos?.encerrar(); this.alunos = undefined; this.planos?.encerrar();
         this.planos = new PlanosTela(this.conteudo,window.academia.planos,usuario.perfil,() => this.login(false,'Sua sessão terminou. Entre novamente.'));
@@ -147,7 +149,7 @@ class AplicacaoRenderer {
       matriculas.addEventListener('click', () => {
         if (window.academia.matriculas === undefined) return;
         this.usuarios?.encerrar(); this.usuarios = undefined; this.alunos?.encerrar(); this.alunos = undefined;
-        this.planos?.encerrar(); this.planos = undefined; this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar();
+        this.planos?.encerrar(); this.planos = undefined; this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar();
         this.matriculas = new MatriculasTela(this.conteudo, window.academia.matriculas, () => this.login(false, 'Sua sessão terminou. Entre novamente.'), usuario.perfil);
         this.matriculas.mostrar();
       });
@@ -157,7 +159,7 @@ class AplicacaoRenderer {
       avisos.textContent = 'Avisos';
       avisos.onclick = () => {
         if (!window.academia.avisos) return;
-        this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar();
+        this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar();
         this.usuarios?.encerrar();
         this.alunos?.encerrar();
         this.planos?.encerrar();
@@ -174,7 +176,7 @@ class AplicacaoRenderer {
         botao.textContent = nome;
         botao.onclick = () => {
           if (!window.academia.pagamentos) return;
-          this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar();
+          this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar(); this.instrutores?.encerrar(); this.matriculas?.encerrar();
           this.usuarios?.encerrar();
           this.alunos?.encerrar();
           this.planos?.encerrar();
@@ -183,6 +185,19 @@ class AplicacaoRenderer {
         };
         this.conta.append(botao);
       }
+    }
+    for (const tipo of ['evolucao','frequencia'] as const) {
+      if (tipo === 'evolucao' && usuario.perfil === 'recepcao') continue;
+      const botao = document.createElement('button'); botao.id = 'abrir-' + tipo;
+      botao.textContent = tipo === 'evolucao' ? 'Evolução física' : 'Frequência';
+      botao.onclick = () => {
+        if (!window.academia.relatorios) return;
+        this.relatorios?.encerrar(); this.avaliacoes?.encerrar(); this.inscricoes?.encerrar(); this.aulas?.encerrar();
+        this.instrutores?.encerrar(); this.matriculas?.encerrar(); this.usuarios?.encerrar(); this.alunos?.encerrar(); this.planos?.encerrar();
+        this.relatorios = new RelatoriosTela(this.conteudo, window.academia.relatorios, tipo, () => this.login(false, 'Sua sessão terminou. Entre novamente.'));
+        this.relatorios.mostrar();
+      };
+      this.conta.append(botao);
     }
     if (usuario.perfil === 'admin') {
       const usuarios = document.createElement('button'); usuarios.type = 'button'; usuarios.id = 'abrir-usuarios'; usuarios.textContent = 'Usuários';
