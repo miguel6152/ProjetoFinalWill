@@ -4,6 +4,8 @@ Documento de arquitetura baseado no `AGENTS.md` e no `README.md`. As decisões m
 
 ## 1. Visão geral e limites das camadas
 
+Relatórios (etapa 6 do Julio): a [API local de relatórios](API_RELATORIOS.md) está implementada em Express no Main, compartilhando sua conexão SQLite. Oferece evolução física e frequência com autorização por sessão, perfil e escopo. O consumo HTTP integrado às telas pertence à etapa 7; as referências históricas à API planejada abaixo antecedem esta entrega.
+
 Avisos internos: a [central de avisos](AVISOS.md) usa os marcos de 7, 3 e 0 dias antes do término de matrículas ativas. A migração 004 registra data-alvo, antecedência, leitura e invalidação em notificações. A [entrega pelo Telegram](MENSAGENS.md) usa a migração 005 e o mesmo aviso; a simulação é o padrão.
 
 Financeiro: a [consulta de inadimplência](INADIMPLENCIA.md) usa as mensalidades da etapa de pagamentos e o dia civil de São Paulo. Admin e recepção podem consultar e abrir a baixa integral.
