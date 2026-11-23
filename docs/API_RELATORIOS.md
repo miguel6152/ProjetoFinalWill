@@ -2,13 +2,13 @@
 
 O Main inicia Express em 127.0.0.1. A porta padrão é escolhida pelo sistema operacional. Defina API_RELATORIOS_PORTA para usar uma porta fixa. Se estiver ocupada, estadoRelatorios() informa indisponibilidade e o desktop continua funcionando. O encerramento fecha conexões HTTP e invalida as credenciais antes de fechar o banco.
 
-Express e @types/express foram adicionados ao lockfile para implementar o servidor solicitado e sua tipagem. A API usa RelatorioService e a conexão SQLite administrada pelo Main. RelatorioRepository reutiliza as regras de leitura de alunos autorizados de AvaliacaoRepository.
+Express e @types/express foram adicionados ao lockfile para implementar o servidor solicitado e sua tipagem. A API usa ConsultaRelatorioService e a conexão SQLite administrada pelo Main. RelatorioService é o cliente HTTP da integração com as telas. RelatorioRepository reutiliza as regras de leitura de alunos autorizados de AvaliacaoRepository.
 
 ## Autenticação
 
 Componentes internos do Main obtêm endereço e credencial por acessoRelatorios(contexto). O token aleatório dura cinco minutos e fica associado à sessão exata da janela. Uma nova emissão para a janela substitui a anterior. O consumidor usa Authorization com o esquema Bearer. Logout, expiração, troca de sessão, exclusão, desativação ou troca de credencial invalidam o acesso. O servidor relê perfil e escopo a cada requisição.
 
-Credenciais ficam no Main. A etapa 7 poderá consumir HTTP no Main e devolver somente os relatórios ao renderer através de IPC tipada.
+Credenciais ficam no Main. A etapa 7 consome HTTP no Main e devolve somente os relatórios ao renderer através de IPC tipada. Consulte ENTREGA_JULIO.md para demonstração, testes e limites.
 
 ## Rotas e filtros
 
