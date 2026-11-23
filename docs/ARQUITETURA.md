@@ -4,6 +4,10 @@ Documento de arquitetura baseado no `AGENTS.md` e no `README.md`. As decisões m
 
 ## 1. Visão geral e limites das camadas
 
+Matrículas: cadastro, consulta, cancelamento e encerramento foram integrados ao Electron com autorização de admin e recepção. A exclusão física sem pagamentos ou notificações vinculados é exclusiva do admin. O cadastro bloqueia sobreposição inclusiva de matrículas ativas do mesmo aluno, independentemente do plano, em transação de escrita. O encerramento é permitido após o último dia contratado. Ver [MATRICULAS.md](MATRICULAS.md). Regras financeiras continuam pendentes.
+
+Atualização da frente do Davi: CRUD de alunos, ViaCEP e CRUD de planos integrados ao Main/preload/renderer, reutilizando schema e sessões, sem migrations. Regras e testes estão em [ALUNOS.md](ALUNOS.md), [VIACEP.md](VIACEP.md) e [PLANOS.md](PLANOS.md). Planos preservam preço/datas contratados das matrículas, aceitam valor zero e mantêm FK RESTRICT na exclusão. Os trechos históricos abaixo sobre domínios ausentes descrevem o estado anterior a essas entregas. Matrículas continuam para uma etapa posterior.
+
 Aplicação desktop em Electron e TypeScript com `strict`, SQLite com `better-sqlite3`, validação com zod e senhas com Argon2id, conforme decisão autorizada na 4.2 que substitui a previsão inicial de bcrypt. Toda lógica de negócio pertence a classes, uma por arquivo com o mesmo nome. Não haverá arquivos `.js` com lógica da aplicação nem uso de `any`.
 
 Estado atual: CRUD administrativo de usuários integrado em Main/preload/IPC e interface, com login/logout e provisionamento local do primeiro admin em banco vazio. A atualização genérica não aceita senha; usuarios:alterar-senha recebe { id, senha } exclusivamente para redefinição por admin. A migration 003 acrescenta versão de credencial, conferida no login/sessão e antes das escritas; redefinição confirmada revoga credenciais anteriores. Há expiração e limites de tentativas configuráveis. Os demais canais/regras abaixo representam contratos para módulos ainda ausentes; estado verificável em ENCERRAMENTO.md.

@@ -34,6 +34,8 @@ Sessões expiram no Main após 30 minutos sem uso ou oito horas desde a autentic
 
 ## Decisões monetárias aprovadas e histórico financeiro
 
+CRUD de planos: valores são validados no Main como centavos inteiros seguros e não negativos, com duração restrita a 1/3/12 meses. Admin gerencia; recepção somente consulta; instrutor não acessa. Ator e referência de concorrência são conferidos antes da operação transacional. Exclusão respeita FK RESTRICT e desativação preserva matrículas. Nenhum valor/data contratados ou pagamento é modificado pela edição do plano. Conversão decimal, permissões e vínculos são testados; detalhes em [docs/PLANOS.md](docs/PLANOS.md).
+
 Valores monetários são armazenados em centavos como `INTEGER`. Está aprovado que `planos.valor_centavos`, `matriculas.valor_contratado_centavos` e `pagamentos.valor_centavos` devem ser maiores ou iguais a zero: valores negativos são proibidos nessas três colunas e zero é permitido, inclusive para planos gratuitos. As constraints existentes já aplicam essa restrição; nenhum SQL foi alterado por este registro documental.
 
 Créditos, descontos, estornos e reembolsos não devem ser representados simplesmente por valores negativos nessas colunas. Caso sejam implementados, deverão possuir operações e registros próprios, preservando o histórico financeiro. Essa diretriz está aprovada, mas tais funcionalidades e seus mecanismos de histórico/auditoria não estão implementados nem têm inclusão no escopo automaticamente aprovada.
@@ -41,6 +43,10 @@ Créditos, descontos, estornos e reembolsos não devem ser representados simples
 Continuam pendentes, para discussão com o grupo, especialmente Davi e Vitor: preço trimestral/anual como total do período ou valor mensal; tratamento de descontos e isenções individuais; funcionamento de créditos, pagamentos parciais e reembolsos, incluindo o detalhamento de eventuais estornos; e calendário de cobrança/parcelamento. A permissão de zero não estabelece o fluxo de isenção, cobrança zerada ou quitação. Essas pendências permanecem separadas das regras aprovadas em [docs/ARQUITETURA.md](docs/ARQUITETURA.md) e [docs/BANCO.md](docs/BANCO.md).
 
 ## Dados pessoais e de saúde
+
+ViaCEP: consultas saem somente do Main, com URL HTTPS fixa, redirecionamentos recusados e envio exclusivo do CEP. O canal específico exige admin/recepção e confere novamente origem/sessão/perfil após HTTP. Entradas e respostas passam por Zod; timeout de 8 segundos, cancelamento e erros sanitizados mantêm o preenchimento manual disponível. CPF e outros dados do aluno não são transmitidos. Contrato e testes simulados em [docs/VIACEP.md](docs/VIACEP.md).
+
+Atualização do módulo de alunos: o CRUD agora valida entradas no Main, exige sessão/perfil por canal, mascara CPF na própria saída da listagem e restringe instrutores aos alunos de suas aulas/avaliações, projetando somente ID, nome e situação. Edição/exclusão validam uma referência opaca de concorrência sob transação; dados de notificações são preservados. Detalhes, testes e limites em [docs/ALUNOS.md](docs/ALUNOS.md). As pendências de retenção, auditoria e proteção do arquivo abaixo continuam válidas; avaliações físicas seguem fora desta entrega.
 
 CPF, contato, endereço e avaliações exigem minimização e acesso por necessidade. O schema prevê esses dados, mas as telas e services que irão coletá-los ainda não existem. A aplicação não oferece nesta etapa mascaramento, gestão de direitos do titular, auditoria de acesso ou política de retenção. Tais controles devem ser implementados nos respectivos módulos antes de uso com dados reais.
 

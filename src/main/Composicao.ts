@@ -21,8 +21,27 @@ import { InicializacaoHandler } from './ipc/InicializacaoHandler';
 import { ProvisionamentoService } from '../services/ProvisionamentoService';
 import { PoliticaSessao } from './seguranca/PoliticaSessao';
 import { LimitadorLogin } from './seguranca/LimitadorLogin';
+import { AlunoRepository } from '../repositories/AlunoRepository';
+import { AlunoService } from '../services/AlunoService';
+import { AlunoHandler } from './ipc/AlunoHandler';
+import { ViaCepService } from '../services/ViaCepService';
+import { EnderecoHandler } from './ipc/EnderecoHandler';
+import { PlanoRepository } from '../repositories/PlanoRepository';
+import { PlanoService } from '../services/PlanoService';
+import { PlanoHandler } from './ipc/PlanoHandler';
+import { MatriculaRepository } from '../repositories/MatriculaRepository';
+import { MatriculaService } from '../services/MatriculaService';
+import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private matriculas: MatriculaService | undefined;
+  private matriculaHandler: MatriculaHandler | undefined;
+  private planos: PlanoService | undefined;
+  private planoHandler: PlanoHandler | undefined;
+  private enderecoHandler: EnderecoHandler | undefined;
+  private autorizador: Autorizador | undefined;
+  private alunos: AlunoService | undefined;
+  private alunoHandler: AlunoHandler | undefined;
   private conexao: Conexao | undefined;
   private autenticacao: AutenticacaoService | undefined;
   private sessoes = new SessaoManager();
@@ -32,6 +51,8 @@ export class Composicao {
   private usuarioHandler: UsuarioHandler | undefined;
   private provisionamento: ProvisionamentoService | undefined;
   private inicializacaoHandler: InicializacaoHandler | undefined;
+
+  public constructor(private readonly viaCep: ViaCepService = new ViaCepService()) {}
 
   public iniciar(caminho: string): void {
     if (this.conexao !== undefined) return;
@@ -44,9 +65,13 @@ export class Composicao {
       new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
       const dados = new ConsultaAutenticacaoRepository(conexao);
       this.sessoes = new SessaoManager(politica);
+      this.autorizador = new Autorizador(this.sessoes, dados);
       this.autenticacao = new AutenticacaoService({ dados, hash: new HashSenhaArgon2() }, limitador);
       this.sessaoAutenticacao = new SessaoAutenticacaoService(this.autenticacao, this.sessoes, new Autorizador(this.sessoes, dados));
       this.usuarios = new UsuarioService(new UsuarioRepository(conexao), new HashSenhaArgon2(), new Autorizador(this.sessoes, dados), this.sessoes);
+      this.alunos = new AlunoService(new AlunoRepository(conexao), new Autorizador(this.sessoes, dados), this.sessoes);
+      this.planos = new PlanoService(new PlanoRepository(conexao), this.autorizador, this.sessoes);
+      this.matriculas = new MatriculaService(new MatriculaRepository(conexao), this.autorizador, this.sessoes);
       this.provisionamento = new ProvisionamentoService(new UsuarioRepository(conexao), new HashSenhaArgon2(), limitador);
       this.conexao = conexao;
     } catch (erro: unknown) {
@@ -56,6 +81,18 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.matriculaHandler?.encerrar();
+    this.matriculaHandler = undefined;
+    this.matriculas = undefined;
+    this.planoHandler?.encerrar();
+    this.planoHandler = undefined;
+    this.planos = undefined;
+    this.enderecoHandler?.encerrar();
+    this.enderecoHandler = undefined;
+    this.autorizador = undefined;
+    this.alunoHandler?.encerrar();
+    this.alunoHandler = undefined;
+    this.alunos = undefined;
     this.inicializacaoHandler?.encerrar();
     this.inicializacaoHandler = undefined;
     this.provisionamento = undefined;
@@ -75,6 +112,14 @@ export class Composicao {
     if (this.sessaoAutenticacao === undefined) throw new ErroAutenticacao('INTERNO');
     this.handler ??= new AutenticacaoHandler(this.sessaoAutenticacao, this.sessoes);
     this.handler.vincular(janela, url);
+    if (this.matriculas === undefined) throw new ErroAutenticacao('INTERNO');
+    this.matriculaHandler ??= new MatriculaHandler(this.matriculas, this.handler);
+    if (this.planos === undefined) throw new ErroAutenticacao('INTERNO');
+    this.planoHandler ??= new PlanoHandler(this.planos, this.handler);
+    if (this.autorizador === undefined) throw new ErroAutenticacao('INTERNO');
+    this.enderecoHandler ??= new EnderecoHandler(this.viaCep, this.handler, this.autorizador, this.sessoes);
+    if (this.alunos === undefined) throw new ErroAutenticacao('INTERNO');
+    this.alunoHandler ??= new AlunoHandler(this.alunos, this.handler);
     if (this.usuarios === undefined) throw new ErroAutenticacao('INTERNO');
     this.usuarioHandler ??= new UsuarioHandler(this.usuarios, this.handler);
     if (this.provisionamento === undefined) throw new ErroAutenticacao('INTERNO');
