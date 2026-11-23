@@ -27,7 +27,7 @@ O cliente precisa de: cadastro de alunos; planos (mensal, trimestral, anual); in
 - Electron, TypeScript (modo `strict`)
 - SQLite com `better-sqlite3`
 - Express + TypeScript para a API própria
-- `bcrypt` para senhas, `zod` para validação
+- `Argon2id` para senhas (decisão da etapa 4.2), `zod` para validação
 - Configurações e chaves em `.env` (nunca commitar)
 
 ## Estrutura de pastas
@@ -57,7 +57,7 @@ docs/            arquitetura e documentação
 
 ## Segurança (sempre)
 
-- Senhas **sempre** com hash bcrypt. Nunca em texto puro, nunca em log.
+- Senhas **sempre** com hash Argon2id, conforme decisão da etapa 4.2 que substituiu bcrypt. Nunca em texto puro, nunca em log.
 - Controle de acesso por perfil (`admin`, `recepcao`, `instrutor`) checado no processo **main**, em todo handler IPC. Nunca confiar só na tela.
 - Electron: `contextIsolation: true`, `nodeIntegration: false`, comunicação apenas via `preload` com canais IPC tipados e específicos.
 - Dados sensíveis (CPF, avaliações físicas) tratados conforme a LGPD: mascarar CPF na listagem, restringir avaliações a admin e instrutor.

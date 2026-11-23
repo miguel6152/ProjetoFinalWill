@@ -1,0 +1,47 @@
+{
+  "name": "sistema-academia",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema desktop de gestão da academia",
+  "main": "dist/src/main/Aplicacao.js",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "setup:electron": "install-electron",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.renderer.json --noEmit",
+    "build": "tsc && tsc -p tsconfig.renderer.json && node dist/tools/CopiarAssets.js",
+    "start": "electron .",
+    "dev": "npm run build && npm start",
+    "test:infra": "npm run build && electron dist/tools/VerificarInfraestrutura.js",
+    "test:banco": "npm run build && electron dist/tools/VerificarBanco.js",
+    "test:contratos": "npm run build && node dist/tools/VerificarContratosRepository.js",
+    "test:leituras": "npm run build && electron dist/tools/VerificarLeiturasRepository.js",
+    "test:escritas": "npm run build && electron dist/tools/VerificarEscritasRepository.js",
+    "test:auth-contratos": "npm run build && node dist/tools/VerificarContratosAutenticacao.js && node dist/tools/VerificarDependenciasAutenticacao.js",
+    "test:auth": "npm run build && node dist/tools/VerificarAutenticacao.js",
+    "test:auth-banco": "npm run build && electron dist/tools/VerificarAutenticacaoBanco.js",
+    "test:sessoes": "npm run build && node dist/tools/VerificarSessoes.js",
+    "test:auth-ipc": "npm run build && electron dist/tools/VerificarAutenticacaoIpc.js",
+    "test:auth-seguranca": "npm run build && electron dist/tools/VerificarSegurancaAutenticacao.js",
+    "test:usuarios": "npm run build && electron dist/tools/VerificarUsuarios.js",
+    "test:inicializacao": "npm run build && electron dist/tools/VerificarProvisionamento.js",
+    "test:politicas": "npm run build && electron dist/tools/VerificarPoliticasSeguranca.js",
+    "test:interface": "npm run build && electron dist/tools/VerificarInterfaceAdministrativa.js"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^24.0.0",
+    "electron": "45.3.2",
+    "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.1.1",
+    "argon2": "0.45.2",
+    "zod": "4.6.7"
+  },
+  "allowScripts": {
+    "better-sqlite3@13.1.1": true,
+    "argon2@0.45.2": true
+  }
+}
