@@ -1,4 +1,9 @@
 import { ClimaService } from '../services/ClimaService';
+import { RelatorioRepository } from '../repositories/RelatorioRepository';
+import { RelatorioService } from '../services/RelatorioService';
+import { CredenciaisRelatorios } from '../api/CredenciaisRelatorios';
+import { ServidorRelatorios } from '../api/ServidorRelatorios';
+import type { ContextoSessao } from './seguranca/ContratosAutenticacao';
 import { ClimaHandler } from './ipc/ClimaHandler';
 import { EntregaService } from '../services/EntregaService';
 import { Migracao005Entregas } from '../database/migrations/Migracao005Entregas';
@@ -57,6 +62,8 @@ import { MatriculaService } from '../services/MatriculaService';
 import { MatriculaHandler } from './ipc/MatriculaHandler';
 
 export class Composicao {
+  private apiRelatorios: ServidorRelatorios | undefined;
+  private credenciaisRelatorios: CredenciaisRelatorios | undefined;
   private climaHandler: ClimaHandler | undefined;
   private entregas: EntregaService | undefined;
   private avisoHandler: AvisoHandler | undefined;
@@ -125,6 +132,10 @@ export class Composicao {
       this.entregas = EntregaService.doAmbiente(this.notificacoes, this.telegramToken);
       this.entregas.iniciar();
       this.conexao = conexao;
+      this.credenciaisRelatorios = new CredenciaisRelatorios(this.sessoes);
+      this.apiRelatorios = new ServidorRelatorios(
+        new RelatorioService(new RelatorioRepository(conexao), this.autorizador, this.sessoes), this.credenciaisRelatorios);
+      void this.apiRelatorios.iniciar(Number(process.env.API_RELATORIOS_PORTA ?? 0));
     } catch (erro: unknown) {
       conexao.fechar();
       throw erro;
@@ -132,6 +143,8 @@ export class Composicao {
   }
 
   public encerrar(): void {
+    this.apiRelatorios?.encerrar(); this.apiRelatorios = undefined;
+    this.credenciaisRelatorios = undefined;
     this.climaHandler?.encerrar(); this.climaHandler = undefined;
     this.entregas?.encerrar();
     this.entregas = undefined;
@@ -218,5 +231,16 @@ export class Composicao {
   public obterAutenticacao(): AutenticacaoService {
     if (this.autenticacao === undefined) throw new ErroAutenticacao('INTERNO');
     return this.autenticacao;
+  }
+
+  /** Acessível somente aos componentes do Main. */
+  public acessoRelatorios(contexto: ContextoSessao): {endereco:string;token:string} {
+    const endereco=this.apiRelatorios?.estado().endereco;
+    if(!endereco || !this.credenciaisRelatorios) throw new ErroAutenticacao('INTERNO');
+    return {endereco,token:this.credenciaisRelatorios.emitir(contexto)};
+  }
+
+  public estadoRelatorios(): {endereco:string|null;erro:string|null} {
+    return this.apiRelatorios?.estado() ?? {endereco:null,erro:'API encerrada.'};
   }
 }
