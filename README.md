@@ -160,6 +160,23 @@ Na validação de 23/11/2026, os 33 scripts `test:*`, `npm run typecheck` e `npm
 
 As opções não sensíveis estão em [.env.example](.env.example): 30 minutos de inatividade, 8 horas de duração máxima, 30 logins por minuto/janela, 120 por processo e quatro logins concorrentes. A aplicação lê variáveis do ambiente do processo; não carrega `.env` automaticamente. Por exemplo, `$env:SESSAO_INATIVIDADE_MS='1800000'` no PowerShell antes de `npm start`. Valores inválidos impedem a inicialização com erro controlado. A configuração do Telegram está listada em `.env.example`; o token real é fornecido pelo ambiente e não está versionado.
 
+### Demonstração escolar (banco isolado)
+
+O banco de demonstração é `app.getPath('userData')/academia-demo.sqlite3`, separado de `academia.sqlite3`. O seed e o aplicativo definem o mesmo nome interno do Electron (`sistema-academia`) antes de consultar `userData`, de modo que ambos usam `%APPDATA%\sistema-academia` no Windows. Uma execução antiga do seed pode ter criado `%APPDATA%\Electron\academia-demo.sqlite3`; esse arquivo legado não é movido, apagado nem sobrescrito e não é o banco usado pelo aplicativo. Preparar ou abrir a demonstração não abre nem migra o banco normal. A rotina cria um arquivo demo novo de forma exclusiva; se ele já existir e pertencer à demonstração, uma nova execução não o altera. Se houver um arquivo desconhecido com esse nome, a preparação para sem sobrescrevê-lo.
+
+Com Node 24, dependências instaladas e um terminal interativo, execute:
+
+```powershell
+npm run demo:seed
+npm run demo
+```
+
+Durante `demo:seed`, informe e confirme a senha do administrador demo (mínimo de 15 caracteres). No Windows, a leitura segura usa a entrada do console (`CONIN$`) e não depende de `stdin`/`stdout` do Electron serem reconhecidos como TTY; nos demais sistemas, requer um `stdin` TTY. A entrada não é exibida, passada em argumentos ou gravada em arquivos/logs; somente o hash Argon2id é persistido. Login: `administrador.demo@example.invalid`. As contas de instrutor recebem hashes aleatórios descartados, sem senha compartilhada. Os CPFs são números sintéticos gerados localmente com checksum válido; os dados não são consultados em cadastros externos. Os alunos não têm contatos ou consentimento de Telegram; os avisos são internos.
+
+O preparador usa as migrations existentes para criar o arquivo novo e semeia o banco separado com chaves estrangeiras habilitadas. A demonstração contém 15 alunos, 5 instrutores, 5 planos, 15 matrículas, pagamentos em estados distintos, aulas e inscrições, avaliações com histórico e avisos de vencimento. `npm run test:demo` verifica isolamento do banco normal, integridade referencial e idempotência em diretórios temporários.
+
+Em uma instalação Windows distribuída, inicie o executável com `--demo` para selecionar o banco demo no mesmo perfil Windows, depois de prepará-lo. O executável sem essa opção continua usando `academia.sqlite3`.
+
 ## Fluxo de trabalho no Git
 
 - Uma branch por funcionalidade (`feat/alunos`, `feat/clima`...).

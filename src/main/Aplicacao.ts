@@ -1,12 +1,15 @@
 import { app, BrowserWindow, dialog } from 'electron';
+import { existsSync } from 'node:fs';
 import { JanelaPrincipal } from './JanelaPrincipal';
 import { Composicao } from './Composicao';
 import path from 'node:path';
+import { IdentidadeAplicacao } from '../shared/IdentidadeAplicacao';
 
 class Aplicacao {
   private readonly composicao: Composicao = new Composicao();
 
   public iniciar(): void {
+    IdentidadeAplicacao.configurar(app);
     // A composição já capturou o token no Main. Os processos das janelas não precisam herdá-lo.
     delete process.env.TELEGRAM_BOT_TOKEN;
     app.on('before-quit', (): void => this.composicao.encerrar());
@@ -17,7 +20,10 @@ class Aplicacao {
       if (BrowserWindow.getAllWindows().length === 0) void this.abrirJanela();
     });
     void app.whenReady().then((): Promise<void> => {
-      this.composicao.iniciar(path.join(app.getPath('userData'), 'academia.sqlite3'));
+      const demo = process.argv.includes('--demo');
+      const banco = path.join(app.getPath('userData'), demo ? 'academia-demo.sqlite3' : 'academia.sqlite3');
+      if (demo && !existsSync(banco)) throw new Error('Banco demo ausente. Execute npm run demo:seed primeiro.');
+      this.composicao.iniciar(banco);
       return this.abrirJanela();
     }).catch((): void => {
       this.composicao.encerrar();
