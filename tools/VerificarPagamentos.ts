@@ -39,11 +39,11 @@ class VerificarPagamentos {
         this.ok(await janela.webContents.executeJavaScript(`window.academia.autenticacao.entrar(${JSON.stringify({
           email: perfil + '@example.invalid', senha: this.senha })})`));
       };
-      const chamar = (janela: BrowserWindow, metodo: 'criar' | 'quitar' | 'listar' | 'obter', dados: unknown): Promise<Resultado<PagamentoDto>> =>
+      const chamar = (janela: BrowserWindow, metodo: 'criar' | 'quitar' | 'listar' | 'obter' | 'atualizar' | 'cancelar', dados: unknown): Promise<Resultado<PagamentoDto>> =>
         janela.webContents.executeJavaScript(`window.academia.pagamentos.${metodo}(${JSON.stringify(dados)})`);
       await entrar(instrutor, 'instrutor');
       const novo = { matricula_id: 1, competencia: '2026-02', data_vencimento: '2026-02-28', valor_centavos: 10000 };
-      for (const metodo of ['listar','obter','criar','quitar'] as const) {
+      for (const metodo of ['listar','obter','criar','quitar','atualizar','cancelar'] as const) {
         this.falha(await chamar(instrutor, metodo, novo), 'SEM_PERMISSAO');
         this.falha(await chamar(recepcao, metodo, novo), 'NAO_AUTENTICADO');
       }
@@ -78,6 +78,30 @@ class VerificarPagamentos {
       const item = this.ok(criacoes.find(r => r.sucesso)!);
       assert.equal(item.situacao, 'pendente');
       assert.equal(item.pago_em, null);
+      assert.ok(item.referencia);
+      banco.preparar<[number], never>("UPDATE pagamentos SET atualizado_em='2000-01-01T00:00:00.000Z' WHERE id=?").run(item.id);
+      const antesEdicao = this.ok(await chamar(recepcao, 'obter', { id: item.id }));
+      const conflitoCompetencia = this.ok(await chamar(recepcao, 'criar', { ...novo,
+        competencia: '2026-01', data_vencimento: '2026-01-31' }));
+      this.falha(await chamar(recepcao, 'atualizar', { id: item.id, referencia: antesEdicao.referencia,
+        alteracoes: { competencia: '2026-01' } }), 'CONFLITO');
+      const aposConflito = this.ok(await chamar(recepcao, 'obter', { id: item.id }));
+      assert.equal(aposConflito.competencia, '2026-02');
+      this.ok(await chamar(recepcao, 'cancelar', { id: conflitoCompetencia.id, referencia: conflitoCompetencia.referencia,
+        motivo: 'Cobrança de teste para conflito.' }));
+      this.falha(await chamar(recepcao, 'atualizar', { id: item.id, referencia: antesEdicao.referencia, alteracoes: { valor_centavos: 0 } }), 'VALIDACAO');
+      this.falha(await chamar(recepcao, 'atualizar', { id: item.id, referencia: '0'.repeat(64), alteracoes: { valor_centavos: 11000 } }), 'CONFLITO');
+      const edicoes = await Promise.all([
+        chamar(recepcao, 'atualizar', { id: item.id, referencia: antesEdicao.referencia, alteracoes: { data_vencimento: '2026-02-26' } }),
+        chamar(recepcao, 'atualizar', { id: item.id, referencia: antesEdicao.referencia, alteracoes: { data_vencimento: '2026-02-27' } })
+      ]);
+      assert.equal(edicoes.filter(r => r.sucesso).length, 1);
+      this.falha(edicoes.find(r => !r.sucesso)!, 'CONFLITO');
+      const editado = this.ok(await chamar(recepcao, 'obter', { id: item.id }));
+      assert.notEqual(editado.referencia, antesEdicao.referencia);
+      assert.ok(editado.atualizado_em > antesEdicao.atualizado_em);
+      this.ok(await chamar(recepcao, 'atualizar', { id: item.id, referencia: editado.referencia,
+        alteracoes: { data_vencimento: '2026-02-28' } }));
       const baixa = { id: item.id, data: '2026-02-28', forma_pagamento: 'pix' };
       this.falha(await chamar(recepcao, 'quitar', { ...baixa, forma_pagamento: 'outro' }), 'VALIDACAO');
       this.falha(await chamar(recepcao, 'quitar', { ...baixa, data: '2026-02-30' }), 'VALIDACAO');
@@ -88,6 +112,7 @@ class VerificarPagamentos {
       composicao.encerrar();
       banco.fechar();
       composicao.iniciar(arquivo);
+      banco = new Conexao(arquivo);
       const janela = await this.abrir(composicao);
       await this.aguardar(janela, "document.querySelector('#form-login') !== null");
       await janela.webContents.executeJavaScript(`const f=document.querySelector('#form-login'); f.elements.email.value='admin@example.invalid';
@@ -98,16 +123,25 @@ class VerificarPagamentos {
       assert.equal(pago.forma_pagamento, 'pix');
       assert.equal(pago.pago_em?.slice(0,10), baixa.data);
       assert.equal(pago.situacao, 'pago');
+      this.falha(await chamar(janela, 'atualizar', { id: pago.id, referencia: pago.referencia, alteracoes: { valor_centavos: 12000 } }), 'CONFLITO');
+      this.falha(await chamar(janela, 'cancelar', { id: pago.id, referencia: pago.referencia, motivo: 'Cobrança já recebida.' }), 'CONFLITO');
+      assert.throws(() => banco!.preparar<[number], never>('DELETE FROM pagamentos WHERE id=?').run(pago.id), /pagamentos nao podem ser removidos fisicamente/);
       await janela.webContents.executeJavaScript("document.querySelector('#abrir-mensalidades').click()");
       await this.aguardar(janela, "document.querySelector('#mensalidades tbody')?.textContent.includes('R$ 100,00')");
-      await janela.webContents.executeJavaScript("document.querySelector('#mensalidades tbody button').click()");
+      await janela.webContents.executeJavaScript("[...document.querySelectorAll('#mensalidades tbody tr')].find(linha => linha.textContent.includes('2026-02'))?.querySelector('button').click()");
       await this.aguardar(janela, "document.querySelector('#detalhe-financeiro')?.textContent.includes('28/02/2026 por pix')");
       assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#recebimento') === null"), true);
+      assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#editar-pagamento') === null && document.querySelector('#cancelar-pagamento') === null"), true);
       await janela.webContents.executeJavaScript(`document.querySelector('#mensalidades details').open=true;
         const novoForm=document.querySelector('#lancamento');
         novoForm.elements.matricula.value='1'; novoForm.elements.competencia.value='2026-03';
         novoForm.elements.vencimento.value='2026-03-31'; novoForm.elements.valor.value='100,00'; novoForm.requestSubmit()`);
       await this.aguardar(janela, "document.querySelector('#mensalidades [role=status]').textContent.includes('lançada')");
+      await this.aguardar(janela, "document.querySelector('#editar-pagamento') !== null && document.querySelector('#cancelar-pagamento') !== null");
+      await janela.webContents.executeJavaScript(`document.querySelector('#editar-pagamento').click();
+        const editar=document.querySelector('#editar-form-pagamento'); editar.elements.vencimento.value='2026-03-30'; editar.requestSubmit()`);
+      await this.aguardar(janela, "document.querySelector('#mensalidades [role=status]').textContent.includes('atualizada')");
+      await this.aguardar(janela, "document.querySelector('#recebimento button') !== null");
       await janela.webContents.executeJavaScript(`const filtros=document.querySelector('#filtro-financeiro');
         filtros.elements.aluno.value='1'; filtros.elements.competencia.value='2026-03'; filtros.elements.situacao.value='pendente';
         filtros.requestSubmit()`);
@@ -119,8 +153,44 @@ class VerificarPagamentos {
       await this.aguardar(janela, "document.querySelector('#mensalidades [role=status]').textContent.includes('integral registrado')");
       assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#mensalidades tbody').textContent"), 'Nenhuma mensalidade encontrada.');
       assert.ok(await janela.webContents.executeJavaScript("document.querySelector('#detalhe-financeiro').textContent.includes('31/03/2026 por dinheiro')"));
+      await janela.webContents.executeJavaScript(`const form=document.querySelector('#lancamento');
+        form.elements.matricula.value='1'; form.elements.competencia.value='2026-04';
+        form.elements.vencimento.value='2026-04-30'; form.elements.valor.value='50,00'; form.requestSubmit()`);
+      await this.aguardar(janela, "document.querySelector('#cancelar-pagamento') !== null");
+      await janela.webContents.executeJavaScript(`document.querySelector('#cancelar-pagamento').click();
+        const cancelar=document.querySelector('#cancelar-form-pagamento'); cancelar.elements.motivo.value='Lançamento incorreto.'; cancelar.requestSubmit()`);
+      await this.aguardar(janela, "document.querySelector('#mensalidades [role=status]').textContent.includes('cancelada e registrada')");
+      assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#editar-pagamento') === null && document.querySelector('#cancelar-pagamento') === null"), true);
       this.ok(await chamar(janela, 'criar', { ...novo, competencia: '2000-01', data_vencimento: '2000-01-31' }));
       this.ok(await chamar(janela, 'criar', { ...novo, competencia: '2000-02', data_vencimento: '2000-02-29', valor_centavos: 15000 }));
+      const cancelavel = this.ok(await chamar(janela, 'criar', { ...novo, competencia: '2000-03', data_vencimento: '2000-03-31', valor_centavos: 5000 }));
+      banco.preparar<[], never>(`CREATE TRIGGER falha_edicao_pagamento BEFORE UPDATE OF valor_centavos ON pagamentos
+        WHEN NEW.id=${cancelavel.id} BEGIN SELECT RAISE(ABORT, 'falha simulada'); END;`).run();
+      this.falha(await chamar(janela, 'atualizar', { id: cancelavel.id, referencia: cancelavel.referencia, alteracoes: { valor_centavos: 6000 } }), 'INTERNO');
+      const aposRollback = this.ok(await chamar(janela, 'obter', { id: cancelavel.id }));
+      assert.equal(aposRollback.valor_centavos, 5000);
+      assert.equal(aposRollback.situacao, 'pendente');
+      banco.preparar<[], never>('DROP TRIGGER falha_edicao_pagamento').run();
+      assert.throws(() => banco!.preparar<[number], never>("UPDATE pagamentos SET situacao='cancelado' WHERE id=?").run(cancelavel.id), /cancelamento sem auditoria/);
+      this.falha(await chamar(janela, 'cancelar', { id: cancelavel.id, referencia: aposRollback.referencia, motivo: '  ' }), 'VALIDACAO');
+      banco.preparar<[], never>(`CREATE TRIGGER falha_cancelamento_pagamento BEFORE UPDATE OF situacao ON pagamentos
+        WHEN NEW.id=${cancelavel.id} BEGIN SELECT RAISE(ABORT, 'falha simulada'); END;`).run();
+      this.falha(await chamar(janela, 'cancelar', { id: cancelavel.id, referencia: aposRollback.referencia, motivo: 'Teste de rollback.' }), 'INTERNO');
+      const cancelamentoRevertido = this.ok(await chamar(janela, 'obter', { id: cancelavel.id }));
+      assert.equal(cancelamentoRevertido.situacao, 'pendente');
+      assert.equal(cancelamentoRevertido.cancelado_em, null);
+      banco.preparar<[], never>('DROP TRIGGER falha_cancelamento_pagamento').run();
+      const cancelado = this.ok(await chamar(janela, 'cancelar', { id: cancelavel.id, referencia: aposRollback.referencia!, motivo: 'Cobrança lançada por engano.' }));
+      assert.equal(cancelado.situacao, 'cancelado');
+      assert.equal(cancelado.matricula_id, 1);
+      assert.equal(cancelado.motivo_cancelamento, 'Cobrança lançada por engano.');
+      assert.ok(cancelado.cancelado_em);
+      assert.equal(cancelado.cancelado_por_nome, 'admin');
+      const responsavel = cancelado.cancelado_por;
+      assert.ok(responsavel !== null);
+      assert.throws(() => banco!.preparar<[number], never>('DELETE FROM pagamentos WHERE id=?').run(cancelado.id), /pagamentos nao podem ser removidos fisicamente/);
+      assert.throws(() => banco!.preparar<[number], never>('DELETE FROM usuarios WHERE id=?').run(responsavel), /FOREIGN KEY/);
+      assert.deepEqual(banco.preparar<[], unknown>('PRAGMA foreign_key_check').all(), []);
       await janela.webContents.executeJavaScript("document.querySelector('#abrir-inadimplencia').click()");
       await this.aguardar(janela, "document.querySelector('#inadimplencia .resultado')?.textContent.includes('R$ 250,00')");
       await janela.webContents.executeJavaScript(`const periodo=document.querySelector('#inadimplencia form');
@@ -135,7 +205,6 @@ class VerificarPagamentos {
       assert.ok(await janela.webContents.executeJavaScript("document.querySelector('#inadimplencia summary').textContent.includes('Mensalidades: 1 · R$ 150,00')"));
       assert.equal(await janela.webContents.executeJavaScript("document.querySelector('#inadimplencia form').elements.inicio.value"), '2000-01-31');
       // Uma nova vigência, mesmo sem nova mensalidade, produz aviso pelo IPC.
-      banco = new Conexao(arquivo);
       banco.preparar<[string], never>("UPDATE matriculas SET data_inicio='2000-01-01',data_fim=? WHERE id=1")
         .run(DataAcademia.civil(new Date()));
       await janela.webContents.executeJavaScript("document.querySelector('#abrir-avisos').click()");

@@ -29,6 +29,9 @@
     "setup:electron": "install-electron",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.renderer.json --noEmit",
     "build": "tsc && tsc -p tsconfig.renderer.json && node dist/tools/CopiarAssets.js",
+    "rebuild:native": "electron-builder install-app-deps",
+    "dist:dir:win:x64": "npm run build && electron-builder --dir --win --x64",
+    "dist:win:x64": "npm run build && electron-builder --win nsis --x64",
     "start": "electron .",
     "dev": "npm run build && npm start",
     "test:infra": "npm run build && electron dist/tools/VerificarInfraestrutura.js",
@@ -52,6 +55,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^24.0.0",
     "electron": "45.3.2",
+    "electron-builder": "^26.18.0",
     "typescript": "7.0.2"
   },
   "dependencies": {
@@ -63,5 +67,41 @@
   "allowScripts": {
     "better-sqlite3@13.1.1": true,
     "argon2@0.45.2": true
+  },
+  "build": {
+    "appId": "br.com.projetofinalwill.sistemaacademia",
+    "productName": "Sistema de Academia",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "!dist/tools/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**",
+      "**/node_modules/argon2/**"
+    ],
+    "npmRebuild": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

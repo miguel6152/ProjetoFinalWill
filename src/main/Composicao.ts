@@ -9,6 +9,7 @@ import type { ContextoSessao } from './seguranca/ContratosAutenticacao';
 import { ClimaHandler } from './ipc/ClimaHandler';
 import { EntregaService } from '../services/EntregaService';
 import { Migracao005Entregas } from '../database/migrations/Migracao005Entregas';
+import { Migracao006AuditoriaPagamentos } from '../database/migrations/Migracao006AuditoriaPagamentos';
 import { AvisoHandler } from './ipc/AvisoHandler';
 import { Migracao004AvisosInternos } from '../database/migrations/Migracao004AvisosInternos';
 import { NotificacaoRepository } from '../repositories/NotificacaoRepository';
@@ -112,7 +113,7 @@ export class Composicao {
     if (caminho !== ':memory:') mkdirSync(path.dirname(caminho), { recursive: true });
     const conexao: Conexao = new Conexao(caminho);
     try {
-      new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos(), new Migracao005Entregas()]).executar();
+      new Migrador(conexao, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos(), new Migracao005Entregas(), new Migracao006AuditoriaPagamentos()]).executar();
       const dados = new ConsultaAutenticacaoRepository(conexao);
       this.sessoes = new SessaoManager(politica);
       this.autorizador = new Autorizador(this.sessoes, dados);

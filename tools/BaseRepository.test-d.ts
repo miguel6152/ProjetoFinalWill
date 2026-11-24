@@ -105,6 +105,6 @@ export type CompatibilidadeIpc = [
     'planos:criar' | 'planos:listar' | 'planos:obter' | 'planos:atualizar' | 'planos:excluir' |
     'avisos:entrega' | 'avisos:processar' | 'avisos:preferencia' | 'avisos:configurar' |
     'avisos:listar' | 'avisos:verificar' | 'avisos:ler' |
-    'pagamentos:inadimplentes' | 'pagamentos:criar' | 'pagamentos:listar' | 'pagamentos:obter' | 'pagamentos:quitar' |
-    'matriculas:criar' | 'matriculas:listar' | 'matriculas:obter' | 'matriculas:cancelar' | 'matriculas:encerrar' | 'matriculas:excluir'>>
+    'pagamentos:inadimplentes' | 'pagamentos:criar' | 'pagamentos:listar' | 'pagamentos:obter' | 'pagamentos:quitar' | 'pagamentos:atualizar' | 'pagamentos:cancelar' |
+    'matriculas:criar' | 'matriculas:listar' | 'matriculas:obter' | 'matriculas:atualizar' | 'matriculas:cancelar' | 'matriculas:encerrar' | 'matriculas:excluir'>>
 ];

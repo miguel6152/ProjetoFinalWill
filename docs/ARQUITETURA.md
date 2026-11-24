@@ -4,6 +4,10 @@ Documento de arquitetura baseado no `AGENTS.md` e no `README.md`. As decisões m
 
 ## 1. Visão geral e limites das camadas
 
+### Estado implementado na `main` após o PR #6
+
+O sistema integra os módulos de alunos, planos, matrículas e pagamentos citados abaixo, além de instrutores, aulas, inscrições, avaliações, inadimplência e avisos. As quatro integrações estão implementadas: ViaCEP, Open-Meteo, Telegram (simulação padrão e envio real configurável) e API local Express de relatórios consumida por HTTP. O servidor Express e o cliente HTTP são iniciados no processo principal. As seções que ainda usam termos como “proposta”, “previsto” ou “planejado” preservam especificações anteriores e não definem canais, permissões ou funcionalidades atuais; para o estado vigente, consulte `src/shared/ipc/ContratoIpc.ts` e os documentos de domínio listados no README.
+
 Relatórios (etapa 6 do Julio): a [API local de relatórios](API_RELATORIOS.md) está implementada em Express no Main, compartilhando sua conexão SQLite. Oferece evolução física e frequência com autorização por sessão, perfil e escopo. O consumo HTTP integrado às telas está entregue na [etapa 7](ENTREGA_JULIO.md); as referências históricas à API planejada abaixo antecedem esta entrega.
 
 Avisos internos: a [central de avisos](AVISOS.md) usa os marcos de 7, 3 e 0 dias antes do término de matrículas ativas. A migração 004 registra data-alvo, antecedência, leitura e invalidação em notificações. A [entrega pelo Telegram](MENSAGENS.md) usa a migração 005 e o mesmo aviso; a simulação é o padrão.
@@ -12,11 +16,11 @@ Financeiro: a [consulta de inadimplência](INADIMPLENCIA.md) usa as mensalidades
 
 Matrículas: cadastro, consulta, cancelamento e encerramento foram integrados ao Electron com autorização de admin e recepção. A exclusão física sem pagamentos ou notificações vinculados é exclusiva do admin. O cadastro bloqueia sobreposição inclusiva de matrículas ativas do mesmo aluno, independentemente do plano, em transação de escrita. O encerramento é permitido após o último dia contratado. Ver [MATRICULAS.md](MATRICULAS.md). Regras financeiras continuam pendentes.
 
-Atualização da frente do Davi: CRUD de alunos, ViaCEP e CRUD de planos integrados ao Main/preload/renderer, reutilizando schema e sessões, sem migrations. Regras e testes estão em [ALUNOS.md](ALUNOS.md), [VIACEP.md](VIACEP.md) e [PLANOS.md](PLANOS.md). Planos preservam preço/datas contratados das matrículas, aceitam valor zero e mantêm FK RESTRICT na exclusão. Os trechos históricos abaixo sobre domínios ausentes descrevem o estado anterior a essas entregas. Matrículas continuam para uma etapa posterior.
+Atualização da frente do Davi: CRUD de alunos, ViaCEP, CRUD de planos e matrículas integrados ao Main/preload/renderer, reutilizando schema e sessões. Regras e testes estão em [ALUNOS.md](ALUNOS.md), [VIACEP.md](VIACEP.md), [PLANOS.md](PLANOS.md) e [MATRICULAS.md](MATRICULAS.md). Planos preservam preço/datas contratados das matrículas, aceitam valor zero e mantêm FK RESTRICT na exclusão.
 
 Aplicação desktop em Electron e TypeScript com `strict`, SQLite com `better-sqlite3`, validação com zod e senhas com Argon2id, conforme decisão autorizada na 4.2 que substitui a previsão inicial de bcrypt. Toda lógica de negócio pertence a classes, uma por arquivo com o mesmo nome. Não haverá arquivos `.js` com lógica da aplicação nem uso de `any`.
 
-Estado atual: CRUD administrativo de usuários integrado em Main/preload/IPC e interface, com login/logout e provisionamento local do primeiro admin em banco vazio. A atualização genérica não aceita senha; usuarios:alterar-senha recebe { id, senha } exclusivamente para redefinição por admin. A migration 003 acrescenta versão de credencial, conferida no login/sessão e antes das escritas; redefinição confirmada revoga credenciais anteriores. Há expiração e limites de tentativas configuráveis. Os demais canais/regras abaixo representam contratos para módulos ainda ausentes; estado verificável em ENCERRAMENTO.md.
+Estado atual da autenticação e administração de usuários: CRUD integrado em Main/preload/IPC e interface, com login/logout e provisionamento local do primeiro admin em banco vazio. A atualização genérica não aceita senha; `usuarios:alterar-senha` recebe `{ id, senha }` exclusivamente para redefinição por admin. Há expiração e limites de tentativas configuráveis. Detalhes e limites estão em [AUTENTICACAO.md](AUTENTICACAO.md) e [SEGURANCA.md](../SEGURANCA.md).
 
 Correção 5.2: além das colunas de domínio do diagrama inicial, usuarios possui a coluna técnica identidade_conta (TEXT, não nula, única, gerada pelo SQLite e imutável), adicionada pela migration 2 sem editar a versão 1. Sessões vinculam ID numérico e essa identidade persistente; IDs reutilizados não transferem autenticação. Exclusão confirmada revoga as sessões locais por identidade, e operações pendentes conferem identidade antes de autorizar/gravar. O campo não integra os DTOs ou payloads IPC; não é um token de acesso. Detalhes de atomicidade, testes e limites estão nos documentos de segurança/autenticação.
 
@@ -24,7 +28,7 @@ Correção 5.3: a identidade do alvo administrativo é capturada sincronamente a
 
 Fluxo de uma operação: **tela → preload → handler IPC → service → repository → SQLite**. Os models representam as entidades usadas pelas camadas. A dependência segue a organização model → repository → service → handler → tela; a tela nunca importa acesso ao banco ou bibliotecas do Node.
 
-Na implementação atual da frente do Miguel, o processo main cria conexão, repositories, services, sessão e handlers de autenticação, usuários e inicialização. O preload expõe métodos específicos e tipados. O renderer recebe apenas DTOs serializáveis, sem hashes, tokens ou objetos de conexão. A API Express e o consumo de relatórios ainda são planejados, sob responsabilidade de Julio: o servidor deverá ficar no mesmo processo proprietário da conexão, escutar apenas em loopback e compartilhar services de consulta. Seu consumo deverá ocorrer por HTTP no main, por meio de `RelatorioService`, preservando o requisito de consumo real da API própria quando essa integração for implementada.
+O processo main cria a conexão, repositories, services, sessão, handlers IPC e servidor Express. O preload expõe métodos específicos e tipados; o renderer recebe DTOs serializáveis. O servidor de relatórios compartilha a conexão SQLite do Main, escuta em loopback e é consumido por HTTP via `RelatorioService`. Detalhes dos endpoints, autenticação e limites estão em [API_RELATORIOS.md](API_RELATORIOS.md).
 
 ## 2. Modelo relacional
 
@@ -91,6 +95,9 @@ erDiagram
         TEXT pago_em
         TEXT forma_pagamento
         TEXT situacao
+        TEXT cancelado_em
+        TEXT motivo_cancelamento
+        INTEGER cancelado_por FK
         TEXT criado_em
         TEXT atualizado_em
     }
@@ -164,6 +171,7 @@ erDiagram
     alunos ||--o{ matriculas : possui
     planos ||--o{ matriculas : define
     matriculas ||--o{ pagamentos : gera
+    usuarios o|--o{ pagamentos : cancela
     matriculas ||--o{ notificacoes : origina
     instrutores ||--o{ aulas : ministra
     aulas ||--o{ inscricoes_aula : recebe
@@ -175,10 +183,10 @@ erDiagram
 ### Integridade e significado dos dados
 
 - `usuarios.perfil`: `admin`, `recepcao` ou `instrutor`; e-mail normalizado e único. `instrutores.usuario_id` é obrigatório e único; o service exige usuário ativo com perfil instrutor. Admin não precisa de cadastro de instrutor para administrar avaliações.
-- Anuláveis em alunos: e-mail, telefone, complemento, `telegram_chat_id` e `autorizado_notificar_em`. Em pagamentos: `pago_em` e `forma_pagamento`. Em aulas: latitude e longitude apenas quando internas. Em avaliações: cintura, quadril, braço, coxa e observações. Em notificações: envio, próxima tentativa, identificador externo e código de erro.
+- Anuláveis em alunos: e-mail, telefone, complemento, `telegram_chat_id` e `autorizado_notificar_em`. Em pagamentos: `pago_em`, `forma_pagamento`, `cancelado_em`, `motivo_cancelamento` e `cancelado_por` (os três últimos registram o cancelamento lógico). Em aulas: latitude e longitude apenas quando internas. Em avaliações: cintura, quadril, braço, coxa e observações. Em notificações: envio, próxima tentativa, identificador externo e código de erro.
 - CPF armazena apenas dígitos e deve ser validado. CPF completo só aparece na consulta individual administrativa necessária à edição; listagens usam CPF mascarado. Instrutor recebe projeção sem CPF, contato ou endereço.
 - Planos têm duração de 1, 3 ou 12 meses. `valor_contratado_centavos` preserva o preço combinado mesmo após alteração do plano. A matrícula possui intervalo inclusivo válido e situação `ativa`, `cancelada` ou `encerrada`; vencimento é derivado da data final.
-- Pagamentos representam cobranças, inclusive antes da quitação: situação `pendente`, `pago` ou `cancelado`. Inadimplência é derivada de cobrança pendente com vencimento anterior à data local atual. `competencia` usa `YYYY-MM`; chave composta única `(matricula_id, competencia)`. Pagamento quitado exige instante de quitação e forma `dinheiro`, `pix`, `cartao` ou `transferencia`.
+- Pagamentos representam cobranças, inclusive antes da quitação: situação `pendente`, `pago` ou `cancelado`. Inadimplência é derivada de cobrança pendente com vencimento anterior à data local atual. `competencia` usa `YYYY-MM`; chave composta única `(matricula_id, competencia)`. Pagamento quitado exige instante de quitação e forma `dinheiro`, `pix`, `cartao` ou `transferencia`. Apenas cobranças pendentes podem ser editadas. Cancelamento é lógico, exige motivo e registra instante e usuário responsável; pagamentos finalizados são imutáveis e não podem ser removidos fisicamente.
 - Cada aula é uma ocorrência com início e fim, modalidade `musculacao`, `funcional` ou `danca`, capacidade positiva e situação `agendada`, `cancelada` ou `concluida`. Aulas externas exigem coordenadas válidas. Não há recorrência implícita.
 - Inscrição tem chave única `(aula_id, aluno_id)`, situação `ativa` ou `cancelada` e presença `nao_registrada`, `presente` ou `ausente`. Presença pertence à inscrição, permitindo relatórios de frequência sem tabela adicional.
 - Avaliações usam unidades explícitas, valores positivos e limites plausíveis validados no service. Evolução é a série cronológica de avaliações do aluno.
@@ -212,9 +220,9 @@ As seguintes questões precisam ser discutidas com o grupo, especialmente Davi R
 
 Nenhuma dessas pendências é resolvida pela regra de não negatividade ou pela permissão de zero. As constraints já existentes não substituem a aprovação das políticas comerciais.
 
-## 3. Estrutura prevista de src/
+## 3. Estrutura de referência de src/
 
-A estrutura abaixo preserva o desenho originalmente previsto e reúne componentes já implementados e componentes planejados; não é um inventário exato dos arquivos atuais. Já existem a infraestrutura Electron, conexão e migrations, BaseRepository, autenticação e sessões, provisionamento inicial e CRUD administrativo de usuários com sua ponte e interface. Os módulos de negócio dos colegas, suas integrações e a API de relatórios permanecem planejados. O estado implementado e as validações estão registrados em `ENCERRAMENTO.md`. Subpastas seguem domínio; cada classe fica em arquivo próprio. Arquivos de tipos e schemas exportam contratos e validações, sem funções soltas de negócio.
+A estrutura abaixo é uma referência arquitetural, não um inventário exato dos arquivos atuais. Os módulos de domínio, integrações e API de relatórios descritos neste documento estão implementados em seus escopos documentados. A tabela detalhada abaixo preserva nomes e organização previstos originalmente; consulte o código e os documentos de cada módulo para confirmar arquivos, operações e limites atuais.
 
 ```text
 src/
@@ -344,7 +352,9 @@ Cada nome na tabela representa uma classe e seu arquivo `.ts` homônimo. A ausê
 
 Miguel também responde por conexão, migrations, configuração, composição, sessão, autorização, registro IPC e ponte. Cada integrante implementa os handlers, schemas, DTOs e telas de seu domínio seguindo esse contrato. Vitor responde pelo agendador; Julio pelo servidor, controller e autenticação da API, em integração com a segurança de Miguel. Alterações em infraestrutura compartilhada devem ser comunicadas ao responsável antes da edição.
 
-## 5. Contrato IPC
+## 5. Contrato IPC (especificação histórica)
+
+As tabelas desta seção registram uma proposta anterior e não são o contrato IPC vigente. Há diferenças deliberadas de nomes, entradas e operações (por exemplo, o financeiro atual usa `pagamentos:quitar` e `pagamentos:cancelar`, e avisos usam canais `avisos:*`). O contrato efetivo e tipado está em [`ContratoIpc.ts`](../src/shared/ipc/ContratoIpc.ts); o registro real de handlers fica em `src/main/ipc/RegistroIpc.ts`. As regras atuais devem ser consultadas nos documentos de domínio.
 
 ### Convenções comuns
 
@@ -444,7 +454,9 @@ Notificações enviadas ou em processamento não podem ser reagendadas ou editad
 
 O percentual usa apenas presenças registradas de inscrições ativas em aulas concluídas: presentes / (presentes + ausentes) × 100; sem registros, retorna `null`. Relatórios limitam intervalo e volume; não retornam histórico ilimitado. Respostas meteorológicas ausentes são erro de disponibilidade, nunca interpretadas como ausência de chuva.
 
-## 6. Permissões por perfil
+## 6. Permissões por perfil (proposta histórica)
+
+A matriz abaixo é a proposta original e não deve ser lida como autorização atualmente aplicada. Os services Main verificam permissões e escopo por canal; regras atuais estão nos documentos de cada módulo (especialmente alunos, matrículas, pagamentos, avaliações, inscrições e relatórios). O renderer não é a autoridade de autorização.
 
 C = criar; L = ler (listar e obter); U = atualizar; E = excluir. `—` significa nenhum acesso. A matriz é uma proposta de menor privilégio para a implementação, sujeita à validação do grupo.
 
@@ -463,17 +475,19 @@ C = criar; L = ler (listar e obter); U = atualizar; E = excluir. `—` significa
 
 Instrutores consultam alunos vinculados às suas aulas ou às avaliações que realizaram. Criam avaliações apenas para alunos desse conjunto e com `instrutor_id` correspondente à sessão; leem o histórico desses alunos para acompanhar evolução; alteram e excluem somente avaliações de sua autoria. Relatórios de frequência para instrutor abrangem apenas suas aulas; evolução exige o mesmo escopo de leitura das avaliações. A verificação usa os vínculos reais no main e também na API, incluindo IDs anteriores e novos em atualizações. O renderer não determina o escopo.
 
-O contrato prevê CRUD completo para as dez entidades, com ao menos admin autorizado em cada operação. Isso não significa que os dez módulos estejam implementados. Na etapa 5, somente o CRUD administrativo de usuários foi integrado; os outros domínios dependem dos respectivos integrantes. Restrições de integridade continuam valendo para admin. Exclusão de cobrança paga ou notificação enviada exige política de retenção definida antes da implementação; a existência do canal não dispensa essa verificação.
+O contrato e as matrizes desta seção preservam a proposta da etapa de arquitetura; não demonstram quais operações estão implementadas nem substituem as autorizações verificadas no Main. O estado atual das operações está no contrato IPC e nos serviços de cada domínio. Restrições de integridade e as regras financeiras de cancelamento descritas nos documentos atuais continuam aplicáveis.
 
 ## 7. Quatro consumos de API
 
-Os contratos abaixo descrevem a integração planejada; detalhes de provedores devem ser conferidos na documentação oficial durante a implementação. Todas as chamadas saem de services no main, têm timeout, validação zod da resposta, mensagens claras e logs sem dados sensíveis. O renderer não escolhe URLs.
+As quatro integrações abaixo estão implementadas. Descrições de regras marcadas como decisões a validar ou propostas permanecem apenas especificações históricas; comportamento vigente, configurações e limitações constam em [VIACEP.md](VIACEP.md), [CLIMA.md](CLIMA.md), [MENSAGENS.md](MENSAGENS.md) e [API_RELATORIOS.md](API_RELATORIOS.md).
+
+As integrações são executadas a partir do processo Main. O comportamento e os limites não são uniformes entre os provedores; consulte os documentos de cada integração. O renderer não escolhe URLs.
 
 | API | Classe / responsável | Entrada e saída usadas | Finalidade |
 |---|---|---|---|
 | ViaCEP | `ViaCepService` / Davi | CEP → logradouro, bairro, localidade e UF | Preencher endereço do aluno sem impedir correção manual |
 | Open-Meteo | `ClimaService` / Julio | Coordenadas e horário da aula → probabilidade de precipitação e precipitação horária | Alertar sobre chuva em aula externa |
-| Telegram Bot API (escolha proposta) | `MensagemService` / Vitor | Chat autorizado e mensagem de vencimento → confirmação e ID externo | Avisar que o plano está perto de vencer |
+| Telegram Bot API | `TelegramCliente` / Vitor | Chat autorizado e mensagem de vencimento → confirmação e ID externo | Avisar que o plano está perto de vencer |
 | API própria Express | `RelatorioService` e `ConsultaRelatorioService` / Julio | Filtros de aluno e período → evolução física ou frequência | Demonstrar consulta HTTP real a relatórios do sistema |
 
 ### ViaCEP
@@ -510,18 +524,20 @@ Usar credencial aleatória de curta duração associada à sessão, mantida apen
 - Sessão: memória no main, vinculada ao `webContents`, invalidada no logout e encerramento da janela; conferir identidade persistente da conta, usuário ativo e perfil atual em cada operação. Exclusão administrativa revoga sessões locais da identidade após commit; outra conexão é detectada na próxima leitura de autorização, mesmo com reutilização do ID numérico. Não há broadcast nem cancelamento retroativo de operações já confirmadas. O renderer não recebe token da API.
 - Validação: todo método público de service valida entradas com zod, inclusive chamadas do agendador e da API. DTOs e schemas distinguem leitura de escrita; entradas não podem alterar campos internos.
 - Persistência: SQLite no diretório de dados do usuário do Electron, fora do repositório. FKs e transações protegem consistência. Erros de banco, rede e API são capturados nos limites das operações; logs usam códigos e identificadores mínimos, sem CPF, avaliações, texto de mensagens ou URLs com token.
-- LGPD: restringir dados de saúde a admin e instrutor, minimizar projeções, registrar autorização de comunicação e definir retenção e exclusão. SQLite não oferece criptografia de dados automaticamente; proteção de acesso ao sistema operacional e dos backups é necessária. A justificativa completa será documentada em `SEGURANCA.md` na frente de Miguel.
-- Ambiente: `.env` ignorado pelo Git; `.env.example` conterá apenas nomes e exemplos fictícios para token do Telegram, porta/fuso, antecedência e limiar de chuva. Token de autenticação da API local é gerado em runtime. Nenhum segredo chega ao renderer ou ao pacote público.
+- LGPD: avaliações físicas são acessíveis a admin e instrutor conforme escopo aplicado no Main; projeções de alunos para instrutores são restritas e a listagem mascara CPF. SQLite não oferece criptografia de dados automaticamente; proteção de acesso ao sistema operacional e dos backups é necessária. Limites e justificativas estão em `SEGURANCA.md`; retenção e direitos do titular não são apresentados como recursos implementados.
+- Ambiente: `.env` é ignorado pelo Git; `.env.example` lista as opções atuais de sessão, login, clima, porta da API de relatórios e Telegram, sem token real. A aplicação lê o ambiente do processo e não carrega `.env` automaticamente. O token de autenticação da API local é gerado em runtime. Nenhum segredo chega ao renderer ou ao pacote público.
 - Ciclo de vida: executar migrations antes de abrir telas; falha de migration interrompe inicialização com orientação clara. Encerramento para agendador, finaliza servidor e fecha conexão. Não bloquear a interface com chamadas de rede; monitorar duração das consultas síncronas ao SQLite.
 
-## 9. Decisões a validar e sequência de implementação
+## 9. Pendências comerciais e registro histórico de implementação
 
-Antes das respectivas funcionalidades, validar com o grupo: Telegram ou e-mail como provedor definitivo; antecedência do aviso; limiar de chuva; calendário de cobrança e parcelamento de planos trimestrais/anuais; sobreposição de matrículas; política de retenção e correção de pagamentos quitados; e a matriz proposta de permissões. A expiração de sessões já está implementada no Main e testada por `test:politicas`: os padrões são 30 minutos de inatividade e oito horas de duração absoluta, configuráveis por `SESSAO_INATIVIDADE_MS` e `SESSAO_DURACAO_MAXIMA_MS`. O uso não prolonga o prazo absoluto. Eventuais ajustes desses parâmetros às necessidades da academia dependem de alinhamento com o grupo; não representam ausência do mecanismo técnico de expiração. Não presumir desconto, multa, bloqueio automático por inadimplência ou cancelamento por chuva.
+As integrações e a sobreposição de matrículas citadas no plano original foram implementadas; seus comportamentos vigentes estão nos documentos de domínio. Permanecem pendentes de definição comercial: calendário de cobrança/parcelamento de planos trimestrais e anuais, descontos/isenções individuais, créditos, pagamentos parciais, reembolsos e política de correção ou retenção de recebimentos. A expiração de sessões está implementada no Main: os padrões são 30 minutos de inatividade e oito horas de duração absoluta, configuráveis por `SESSAO_INATIVIDADE_MS` e `SESSAO_DURACAO_MAXIMA_MS`. O uso não prolonga o prazo absoluto. Não presumir desconto, multa, bloqueio automático por inadimplência ou cancelamento por chuva.
 
 As decisões monetárias aprovadas e as questões financeiras ainda pendentes estão separadas na seção 2. A não negatividade e a permissão de valores zero estão aprovadas; a interpretação do preço por período, descontos/isenções individuais, créditos, pagamentos parciais, reembolsos e calendário de cobrança continuam pendentes de discussão com Davi e Vitor.
 
-A implementação deve avançar em entregas pequenas: Miguel estabelece infraestrutura, migrations e autenticação; em seguida cada integrante entrega um CRUD completo de seu domínio, com autorização e validação; depois entram integrações e relatórios. Davi e Vitor precisam alinhar geração das cobranças da matrícula em uma única transação quando a política comercial for definida. Não adicionar dependências além da stack sem justificativa.
+O parágrafo seguinte registra a sequência originalmente planejada; não descreve trabalho ainda pendente nem validação executada no estado atual.
 
-Verificações previstas: integridade das FKs e exclusão restrita; CRUD das dez entidades; rejeição de perfil indevido em todos os canais; escopo de instrutor; mascaramento e ausência de segredos nos DTOs; capacidade de aula sob concorrência; indisponibilidade das APIs; duplicidade e retomada de notificações; autenticação e escopo dos relatórios HTTP. Estas verificações orientam testes futuros; nenhum teste de aplicação é executável nesta etapa documental.
+A implementação deveria avançar em entregas pequenas: Miguel estabelece infraestrutura, migrations e autenticação; em seguida cada integrante entrega um CRUD completo de seu domínio, com autorização e validação; depois entram integrações e relatórios. Davi e Vitor precisam alinhar geração das cobranças da matrícula em uma única transação quando a política comercial for definida. Não adicionar dependências além da stack sem justificativa.
+
+Verificações previstas no plano original: integridade das FKs e exclusão restrita; CRUD das dez entidades; rejeição de perfil indevido em todos os canais; escopo de instrutor; mascaramento e ausência de segredos nos DTOs; capacidade de aula sob concorrência; indisponibilidade das APIs; duplicidade e retomada de notificações; autenticação e escopo dos relatórios HTTP. As verificações executadas por módulo estão registradas nos respectivos documentos e scripts `test:*` do `package.json`.
 
 Trabalho em branch por funcionalidade, commits pequenos com identidade do próprio integrante e revisão do diff antes de commit. Integração à main por Pull Request revisado por outro integrante.
