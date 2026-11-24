@@ -82,6 +82,8 @@ export class MatriculasTela {
     for (const [rotulo, valor] of campos) { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = rotulo; dd.textContent = valor; lista.append(dt, dd); }
     this.detalhesArea.replaceChildren(titulo, lista, this.botao('Fechar', () => this.detalhesArea.replaceChildren()));
     if (m.situacao === 'ativa') {
+      const editar = this.botao('Editar matrícula', () => this.editar(m)); editar.id = 'editar-matricula';
+      this.detalhesArea.append(editar);
       const cancelar = this.botao('Cancelar matrícula', () => this.confirmarSituacao(m, 'cancelar')); cancelar.id = 'cancelar-matricula';
       const encerrar = this.botao('Encerrar matrícula', () => this.confirmarSituacao(m, 'encerrar')); encerrar.id = 'encerrar-matricula';
       this.detalhesArea.append(cancelar, encerrar);
@@ -89,6 +91,36 @@ export class MatriculasTela {
     if (this.perfil === 'admin' && m.referencia !== undefined) {
       const excluir = this.botao('Excluir matrícula', () => this.confirmarExclusao(m)); excluir.id = 'excluir-matricula'; this.detalhesArea.append(excluir);
     }
+  }
+  private editar(m: MatriculaDto): void {
+    const titulo = document.createElement('h3'); titulo.textContent = 'Editar matrícula';
+    const form = document.createElement('form'); form.id = 'form-editar-matricula'; form.className = 'cartao grade-formulario';
+    form.innerHTML = '<label>ID do aluno<input name="aluno_id" type="number" min="1" step="1" required></label><label>ID do plano ativo<input name="plano_id" type="number" min="1" step="1" required></label><label>Início<input name="data_inicio" type="date" required></label><label>Fim<input name="data_fim" type="date" required></label><label>Valor contratado (R$)<input name="valor" inputmode="decimal" required></label><div class="acoes"><button type="submit">Salvar alterações</button><button type="button" id="fechar-edicao-matricula">Cancelar edição</button></div>';
+    const campo = (nome: string): HTMLInputElement => form.querySelector<HTMLInputElement>(`[name=${nome}]`)!;
+    campo('aluno_id').value = String(m.aluno_id);
+    campo('plano_id').value = String(m.plano_id);
+    campo('data_inicio').value = m.data_inicio;
+    campo('data_fim').value = m.data_fim;
+    campo('valor').value = ValorMonetario.paraEntrada(m.valor_contratado_centavos);
+    form.querySelector<HTMLButtonElement>('#fechar-edicao-matricula')!.addEventListener('click', () => {
+      if (!this.ocupada) this.detalhesArea.replaceChildren();
+    });
+    form.addEventListener('submit', evento => {
+      evento.preventDefault();
+      void this.proteger(async () => {
+        const valor = ValorMonetario.paraCentavos(campo('valor').value);
+        if (valor === undefined) { this.mensagem.textContent = 'Informe um valor não negativo com até duas casas decimais.'; return; }
+        const atualizada = this.exigir(await this.ponte.atualizar({ id: m.id, referencia: m.referencia!, alteracoes: {
+          aluno_id: Number(campo('aluno_id').value), plano_id: Number(campo('plano_id').value),
+          data_inicio: campo('data_inicio').value, data_fim: campo('data_fim').value, valor_contratado_centavos: valor
+        } }));
+        if (!this.ativa) return;
+        await this.carregar();
+        if (!this.ativa) return;
+        this.detalhes(atualizada); this.mensagem.textContent = 'Matrícula atualizada.';
+      });
+    });
+    this.detalhesArea.replaceChildren(titulo, form, this.botao('Voltar aos detalhes', () => this.detalhes(m)));
   }
   private confirmarExclusao(m: MatriculaDto): void {
     const referencia = m.referencia;
