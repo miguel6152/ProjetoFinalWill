@@ -65,6 +65,21 @@ As decisões de segurança e suas justificativas estão em [SEGURANCA.md](SEGURA
 - sessões em memória com prazo, limites de tentativas e revogação persistente após redefinição de senha;
 - identidade de conta independente do ID numérico, protegendo sessões e operações pendentes contra reutilização de IDs.
 
+## Instalador Windows x64
+
+O empacotamento usa Electron Builder 26 e NSIS. Gere o instalador em Windows x64 com Node 24 (definido em `.nvmrc`) e dependências instaladas:
+
+```powershell
+npm ci
+npm run dist:win:x64
+```
+
+O executável NSIS completo, que pode ser distribuído e instalado sem baixar dependências no computador de destino, será criado em `release/`. Para conferir apenas a pasta empacotada antes do instalador, execute `npm run dist:dir:win:x64`.
+
+`npm run dist:win:x64` compila o TypeScript e cria o alvo `nsis` para `x64`. Durante o empacotamento, Electron Builder recompila as dependências nativas para Electron 45.3.2; `better-sqlite3` e `argon2` são mantidos fora do ASAR para que seus binários possam ser carregados. `npm run rebuild:native` permite solicitar esse rebuild separadamente, se necessário. O empacotamento exige acesso aos artefatos de build que ainda não estejam em cache; a instalação do `.exe` pronto não exige acesso ao npm.
+
+O instalador assistido instala por usuário e não remove dados do aplicativo na desinstalação. O banco segue em `app.getPath('userData')`, separado dos arquivos da instalação, portanto atualizações e reinstalações não o substituem. Ainda assim, mantenha backup do banco antes de atualizar.
+
 ## Uso de IA, MCP e RAG
 
 Usamos IA generativa para apoiar a arquitetura e o desenvolvimento, e todos os integrantes revisam e entendem o código que commitam.
