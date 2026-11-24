@@ -3,9 +3,9 @@
 Projeto final da disciplina **DAD (Desenvolvimento de Aplicações Desktop)**.
 Aplicação desktop em **Electron + TypeScript** para gerenciar uma academia de bairro: alunos, planos, mensalidades, aulas, instrutores e avaliações físicas.
 
-> Status: em desenvolvimento. [Matrículas](docs/MATRICULAS.md) permitem cadastro, consulta, cancelamento e encerramento para administrador e recepção; exclusão sem vínculos é exclusiva do administrador.
+> Status: em desenvolvimento. [Matrículas](docs/MATRICULAS.md) permitem cadastro, consulta, atualização, cancelamento, encerramento e exclusão sem vínculos (esta última exclusiva do administrador).
 
-A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e [matrículas](docs/MATRICULAS.md), integrados ao Electron. A frente do Vitor inclui [lançamento manual de mensalidades e quitação integral](docs/MENSALIDADES.md), [consulta de inadimplência por aluno](docs/INADIMPLENCIA.md), [avisos internos de término do plano](docs/AVISOS.md) e [entrega pelo Telegram](docs/MENSAGENS.md). A frente do Julio inclui instrutores, aulas, inscrições/chamada, avaliações, Open-Meteo e relatórios consumidos por HTTP no Main. Veja a [entrega e evidências do Julio](docs/ENTREGA_JULIO.md) e suas pendências de revisão e homologação coletiva. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
+A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e [matrículas](docs/MATRICULAS.md), integrados ao Electron. A frente do Vitor inclui [lançamento, edição, cancelamento e quitação de mensalidades](docs/MENSALIDADES.md), [consulta de inadimplência por aluno](docs/INADIMPLENCIA.md), [avisos internos de término do plano](docs/AVISOS.md) e [entrega pelo Telegram](docs/MENSAGENS.md). A frente do Julio inclui instrutores, aulas, inscrições/chamada, avaliações, Open-Meteo e relatórios consumidos por HTTP no Main. Veja a [entrega e evidências do Julio](docs/ENTREGA_JULIO.md) e suas pendências de revisão e homologação coletiva. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
 
 ## Integrantes
 
@@ -45,7 +45,7 @@ O diagrama completo está em [docs/ARQUITETURA.md](docs/ARQUITETURA.md). As migr
 
 ## Consumo de APIs
 
-| # | API prevista | Finalidade no sistema | Estado |
+| # | API integrada | Finalidade no sistema | Estado |
 |---|---|---|---|
 | 1 | ViaCEP | Preencher o endereço no cadastro de alunos | Implementado — Davi; consulta opcional com preenchimento manual |
 | 2 | Open-Meteo | Alertar chuva em aulas ao ar livre | Implementado — testes com transporte simulado e origem identificada |
@@ -54,7 +54,7 @@ O diagrama completo está em [docs/ARQUITETURA.md](docs/ARQUITETURA.md). As migr
 
 ## Segurança
 
-As decisões de segurança e suas justificativas estão em [SEGURANCA.md](SEGURANCA.md). Controles de dados pessoais dos módulos ainda ausentes continuam pendentes com seus responsáveis. Resumo da frente implementada:
+As decisões de segurança e suas justificativas estão em [SEGURANCA.md](SEGURANCA.md). Os controles e limites de dados pessoais implementados por módulo estão descritos em [SEGURANCA.md](SEGURANCA.md) e nos documentos de domínio. Resumo da frente implementada:
 
 - senhas com hash Argon2id, nunca em texto puro ou log; novas credenciais têm pelo menos 15 caracteres;
 - controle de acesso por perfil (admin, recepção, instrutor);
@@ -105,7 +105,7 @@ O banco fica em `app.getPath('userData')/academia.sqlite3`. Não armazene bancos
 
 Para verificar: `npm run typecheck`, `npm run build` e os scripts `test:infra`, `test:banco`, `test:contratos`, `test:leituras`, `test:escritas`, `test:auth-contratos`, `test:auth`, `test:auth-banco`, `test:sessoes`, `test:auth-ipc`, `test:auth-seguranca`, `test:usuarios`, `test:inicializacao`, `test:politicas` e `test:interface`; execute também `npm audit` e `git diff --check`. Os testes usam exclusivamente memória e arquivos temporários.
 
-As opções não sensíveis estão em [.env.example](.env.example): 30 minutos de inatividade, 8 horas de duração máxima, 30 logins por minuto/janela, 120 por processo e quatro logins concorrentes. A aplicação lê variáveis do ambiente do processo; não carrega `.env` automaticamente. Por exemplo, `$env:SESSAO_INATIVIDADE_MS='1800000'` no PowerShell antes de `npm start`. Valores inválidos impedem a inicialização com erro controlado. Credenciais/chaves das futuras APIs não foram criadas.
+As opções não sensíveis estão em [.env.example](.env.example): 30 minutos de inatividade, 8 horas de duração máxima, 30 logins por minuto/janela, 120 por processo e quatro logins concorrentes. A aplicação lê variáveis do ambiente do processo; não carrega `.env` automaticamente. Por exemplo, `$env:SESSAO_INATIVIDADE_MS='1800000'` no PowerShell antes de `npm start`. Valores inválidos impedem a inicialização com erro controlado. A configuração do Telegram está listada em `.env.example`; o token real é fornecido pelo ambiente e não está versionado.
 
 ## Fluxo de trabalho no Git
 
