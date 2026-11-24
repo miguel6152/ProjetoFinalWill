@@ -1,6 +1,6 @@
 # CRUD de alunos — frente do Davi
 
-Implementado na branch `feat/davi-alunos-planos-matriculas`. A entrega de CRUD abrange alunos: cadastro, listagem paginada, busca, detalhes, edição, desativação e exclusão física sem dependências. A etapa seguinte acrescentou [ViaCEP](VIACEP.md) como auxílio opcional ao endereço, preservando preenchimento manual. Planos e matrículas serão tratados posteriormente.
+Esta documentação preserva o escopo da entrega original na branch `feat/davi-alunos-planos-matriculas`: CRUD de alunos (cadastro, listagem paginada, busca, detalhes, edição, desativação e exclusão física sem dependências) e integração opcional com [ViaCEP](VIACEP.md). Planos e matrículas, então descritos como etapas posteriores, também estão integrados atualmente; consulte [PLANOS.md](PLANOS.md) e [MATRICULAS.md](MATRICULAS.md).
 
 ## Arquivos e decisões
 
@@ -28,7 +28,7 @@ Não há migration. A tabela `alunos` e todas as FKs permanecem intactas. E-mail
 
 CPF e CEP aceitam a apresentação usual e são armazenados somente com dígitos. Telefone aceita caracteres de formatação e é armazenado com 10 a 13 dígitos. E-mail usa trim e minúsculas. E-mail, telefone e complemento vazios no formulário viram `null`. Nome/endereço têm limites de tamanho; UF precisa ser válida. A data de nascimento é uma data civil real, sem mínimo de idade inventado; não pode ser posterior ao dia local do sistema.
 
-`telegram_chat_id` e `autorizado_notificar_em` são inicializados como nulos na criação, não entram em DTOs/formulários e são preservados na edição. A gestão de consentimento e envio pertence à frente do Vitor.
+`telegram_chat_id` e `autorizado_notificar_em` são inicializados como nulos na criação, não entram em DTOs/formulários e são preservados na edição. O vínculo e o consentimento são geridos por administrador ou recepção na [central de mensagens](MENSAGENS.md).
 
 ## Permissões e privacidade
 

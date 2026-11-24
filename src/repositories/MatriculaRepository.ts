@@ -25,8 +25,17 @@ export class MatriculaRepository extends BaseRepository<Matricula, never> {
   public escritaAtomica<T>(operacao: () => T extends PromiseLike<unknown> ? never : T): T { return this.conexao.transacao(operacao); }
   public alunoExiste(id: number): boolean { return this.conexao.preparar<[number], { id: number }>('SELECT id FROM alunos WHERE id=?').get(id) !== undefined; }
   public planoAtivo(id: number): boolean { return this.conexao.preparar<[number], { id: number }>('SELECT id FROM planos WHERE id=? AND ativo=1').get(id) !== undefined; }
-  public sobrepoe(aluno: number, inicio: string, fim: string): boolean {
-    return this.conexao.preparar<[number, string, string], { id: number }>("SELECT id FROM matriculas WHERE aluno_id=? AND situacao='ativa' AND data_inicio<=? AND data_fim>=? LIMIT 1").get(aluno, fim, inicio) !== undefined;
+  public sobrepoe(aluno: number, inicio: string, fim: string, ignorarId?: number): boolean {
+    const ignorado = ignorarId ?? null;
+    return this.conexao.preparar<[number, string, string, number | null, number | null], { id: number }>(
+      "SELECT id FROM matriculas WHERE aluno_id=? AND situacao='ativa' AND data_inicio<=? AND data_fim>=? AND (? IS NULL OR id<>?) LIMIT 1"
+    ).get(aluno, fim, inicio, ignorado, ignorado) !== undefined;
+  }
+  public atualizar(id: number, atualizadoEm: string, dados: NovaMatricula): boolean {
+    const agora = new Date().toISOString();
+    return this.conexao.preparar<[number, number, string, string, number, string, number, string], never>(
+      "UPDATE matriculas SET aluno_id=?,plano_id=?,data_inicio=?,data_fim=?,valor_contratado_centavos=?,atualizado_em=? WHERE id=? AND situacao='ativa' AND atualizado_em=?"
+    ).run(dados.aluno_id, dados.plano_id, dados.data_inicio, dados.data_fim, dados.valor_contratado_centavos, agora, id, atualizadoEm).changes === 1;
   }
   public cadastrar(dados: NovaMatricula): MatriculaDto {
     const resultado = this.create({ ...dados, situacao: 'ativa' });

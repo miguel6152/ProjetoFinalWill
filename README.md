@@ -3,9 +3,9 @@
 Projeto final da disciplina **DAD (Desenvolvimento de Aplicações Desktop)**.
 Aplicação desktop em **Electron + TypeScript** para gerenciar uma academia de bairro: alunos, planos, mensalidades, aulas, instrutores e avaliações físicas.
 
-> Status: em desenvolvimento. [Matrículas](docs/MATRICULAS.md) permitem cadastro, consulta, cancelamento e encerramento para administrador e recepção; exclusão sem vínculos é exclusiva do administrador.
+> Status: em desenvolvimento. [Matrículas](docs/MATRICULAS.md) permitem cadastro, consulta, atualização, cancelamento, encerramento e exclusão sem vínculos (esta última exclusiva do administrador).
 
-A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e [matrículas](docs/MATRICULAS.md), integrados ao Electron. Financeiro/notificações, aulas/avaliações e as outras três integrações de API ainda dependem das próximas entregas. Isso impede considerar o projeto completo pronto. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
+A frente do Miguel implementa infraestrutura, banco, autenticação, provisionamento inicial e interface administrativa de usuários. A frente do Davi acrescenta o [CRUD de alunos](docs/ALUNOS.md), a [consulta ViaCEP](docs/VIACEP.md), o [CRUD de planos](docs/PLANOS.md) e [matrículas](docs/MATRICULAS.md), integrados ao Electron. A frente do Vitor inclui [lançamento, edição, cancelamento e quitação de mensalidades](docs/MENSALIDADES.md), [consulta de inadimplência por aluno](docs/INADIMPLENCIA.md), [avisos internos de término do plano](docs/AVISOS.md) e [entrega pelo Telegram](docs/MENSAGENS.md). A frente do Julio inclui instrutores, aulas, inscrições/chamada, avaliações, Open-Meteo e relatórios consumidos por HTTP no Main. Veja a [entrega e evidências do Julio](docs/ENTREGA_JULIO.md) e suas pendências de revisão e homologação coletiva. A matriz histórica da infraestrutura está em [docs/ENCERRAMENTO.md](docs/ENCERRAMENTO.md).
 
 ## Integrantes
 
@@ -32,7 +32,7 @@ O dono da academia precisa de um sistema que:
 - Electron
 - TypeScript (toda a lógica da aplicação, sem JavaScript)
 - SQLite (`better-sqlite3`)
-- Express + TypeScript (API própria prevista, ainda não implementada)
+- Express + TypeScript (API própria em loopback, integrada aos relatórios)
 - Argon2id (hash de senhas, decisão da etapa 4.2)
 - zod (validação de entradas)
 
@@ -45,16 +45,16 @@ O diagrama completo está em [docs/ARQUITETURA.md](docs/ARQUITETURA.md). As migr
 
 ## Consumo de APIs
 
-| # | API prevista | Finalidade no sistema | Estado |
+| # | API integrada | Finalidade no sistema | Estado |
 |---|---|---|---|
 | 1 | ViaCEP | Preencher o endereço no cadastro de alunos | Implementado — Davi; consulta opcional com preenchimento manual |
-| 2 | Open-Meteo | Alertar chuva em aulas ao ar livre | Pendente — Julio |
-| 3 | API de mensagens (Telegram Bot ou e-mail) | Avisar o aluno sobre vencimento do plano | Pendente — Vitor |
-| 4 | API própria (Express + TypeScript) | Relatórios de evolução física e frequência | Pendente — Julio |
+| 2 | Open-Meteo | Alertar chuva em aulas ao ar livre | Implementado — testes com transporte simulado e origem identificada |
+| 3 | Telegram Bot API | Avisar o aluno sobre vencimento do plano | Implementado — simulação padrão, envio real configurável, testes com mocks |
+| 4 | API própria (Express + TypeScript) | Relatórios de evolução física e frequência | Implementado — telas, IPC e consumo HTTP real em loopback |
 
 ## Segurança
 
-As decisões de segurança e suas justificativas estão em [SEGURANCA.md](SEGURANCA.md). Controles de dados pessoais dos módulos ainda ausentes continuam pendentes com seus responsáveis. Resumo da frente implementada:
+As decisões de segurança e suas justificativas estão em [SEGURANCA.md](SEGURANCA.md). Os controles e limites de dados pessoais implementados por módulo estão descritos em [SEGURANCA.md](SEGURANCA.md) e nos documentos de domínio. Resumo da frente implementada:
 
 - senhas com hash Argon2id, nunca em texto puro ou log; novas credenciais têm pelo menos 15 caracteres;
 - controle de acesso por perfil (admin, recepção, instrutor);
@@ -64,6 +64,21 @@ As decisões de segurança e suas justificativas estão em [SEGURANCA.md](SEGURA
 - Electron com `contextIsolation: true`, `nodeIntegration: false` e comunicação via preload/IPC.
 - sessões em memória com prazo, limites de tentativas e revogação persistente após redefinição de senha;
 - identidade de conta independente do ID numérico, protegendo sessões e operações pendentes contra reutilização de IDs.
+
+## Instalador Windows x64
+
+O empacotamento usa Electron Builder 26 e NSIS. Gere o instalador em Windows x64 com Node 24 (definido em `.nvmrc`) e dependências instaladas:
+
+```powershell
+npm ci
+npm run dist:win:x64
+```
+
+O executável NSIS completo, que pode ser distribuído e instalado sem baixar dependências no computador de destino, será criado em `release/`. Para conferir apenas a pasta empacotada antes do instalador, execute `npm run dist:dir:win:x64`.
+
+`npm run dist:win:x64` compila o TypeScript e cria o alvo `nsis` para `x64`. Durante o empacotamento, Electron Builder recompila as dependências nativas para Electron 45.3.2; `better-sqlite3` e `argon2` são mantidos fora do ASAR para que seus binários possam ser carregados. `npm run rebuild:native` permite solicitar esse rebuild separadamente, se necessário. O empacotamento exige acesso aos artefatos de build que ainda não estejam em cache; a instalação do `.exe` pronto não exige acesso ao npm.
+
+O instalador assistido instala por usuário e não remove dados do aplicativo na desinstalação. O banco segue em `app.getPath('userData')`, separado dos arquivos da instalação, portanto atualizações e reinstalações não o substituem. Ainda assim, mantenha backup do banco antes de atualizar.
 
 ## Uso de IA, MCP e RAG
 
@@ -103,9 +118,47 @@ Na primeira abertura de um banco vazio, cadastre o administrador pelo formulári
 
 O banco fica em `app.getPath('userData')/academia.sqlite3`. Não armazene bancos reais no repositório. O aplicativo não apaga o banco para contornar falha de migration. Faça backup do arquivo com o aplicativo fechado antes de atualizar uma instalação com dados importantes.
 
-Para verificar: `npm run typecheck`, `npm run build` e os scripts `test:infra`, `test:banco`, `test:contratos`, `test:leituras`, `test:escritas`, `test:auth-contratos`, `test:auth`, `test:auth-banco`, `test:sessoes`, `test:auth-ipc`, `test:auth-seguranca`, `test:usuarios`, `test:inicializacao`, `test:politicas` e `test:interface`; execute também `npm audit` e `git diff --check`. Os testes usam exclusivamente memória e arquivos temporários.
+Após a instalação, valide o código com `npm run typecheck`, `npm run build` e cada script de teste disponível no `package.json`:
 
-As opções não sensíveis estão em [.env.example](.env.example): 30 minutos de inatividade, 8 horas de duração máxima, 30 logins por minuto/janela, 120 por processo e quatro logins concorrentes. A aplicação lê variáveis do ambiente do processo; não carrega `.env` automaticamente. Por exemplo, `$env:SESSAO_INATIVIDADE_MS='1800000'` no PowerShell antes de `npm start`. Valores inválidos impedem a inicialização com erro controlado. Credenciais/chaves das futuras APIs não foram criadas.
+```bash
+npm run test:integracao-julio
+npm run test:api-relatorios
+npm run test:clima
+npm run test:avaliacoes
+npm run test:inscricoes
+npm run test:aulas
+npm run test:instrutores
+npm run test:entregas
+npm run test:avisos
+npm run test:inadimplencia
+npm run test:pagamentos
+npm run test:matriculas
+npm run test:planos
+npm run test:planos-interface
+npm run test:viacep
+npm run test:viacep-interface
+npm run test:alunos
+npm run test:alunos-interface
+npm run test:infra
+npm run test:banco
+npm run test:contratos
+npm run test:leituras
+npm run test:escritas
+npm run test:auth-contratos
+npm run test:auth
+npm run test:auth-banco
+npm run test:sessoes
+npm run test:auth-ipc
+npm run test:auth-seguranca
+npm run test:usuarios
+npm run test:inicializacao
+npm run test:politicas
+npm run test:interface
+```
+
+Na validação de 23/11/2026, os 33 scripts `test:*`, `npm run typecheck` e `npm run build` foram concluídos com sucesso. Esse resultado registra aquela execução e não garante resultados futuros. Os testes usam exclusivamente memória e arquivos temporários. `npm audit` e `git diff --check` também podem ser executados como verificações adicionais.
+
+As opções não sensíveis estão em [.env.example](.env.example): 30 minutos de inatividade, 8 horas de duração máxima, 30 logins por minuto/janela, 120 por processo e quatro logins concorrentes. A aplicação lê variáveis do ambiente do processo; não carrega `.env` automaticamente. Por exemplo, `$env:SESSAO_INATIVIDADE_MS='1800000'` no PowerShell antes de `npm start`. Valores inválidos impedem a inicialização com erro controlado. A configuração do Telegram está listada em `.env.example`; o token real é fornecido pelo ambiente e não está versionado.
 
 ## Fluxo de trabalho no Git
 

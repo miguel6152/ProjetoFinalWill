@@ -1,8 +1,8 @@
 # Matrículas
 
-O módulo oferece cadastro, consulta, cancelamento, encerramento e exclusão de matrículas. A listagem é paginada e filtrável por aluno, plano e situação. A tela mostra os nomes atuais do aluno e do plano e o valor e as datas registrados na matrícula.
+O módulo oferece cadastro, consulta, atualização, cancelamento, encerramento e exclusão de matrículas. A listagem é paginada e filtrável por aluno, plano e situação. A tela mostra os nomes atuais do aluno e do plano e o valor e as datas registrados na matrícula.
 
-A tabela e suas chaves estrangeiras já existiam; não houve migration. A consulta usa SQL parametrizado e uma transação de leitura para manter contagem e página coerentes. A validação zod limita tamanho de página, IDs e situações, e verifica o offset. O processo main valida origem, sessão e identidade; somente administrador e recepção podem consultar, cadastrar, cancelar e encerrar.
+A tabela e suas chaves estrangeiras já existiam; não houve migration. A consulta usa SQL parametrizado e uma transação de leitura para manter contagem e página coerentes. A validação zod limita tamanho de página, IDs e situações, e verifica o offset. O processo main valida origem, sessão e identidade; administrador e recepção podem consultar, cadastrar, atualizar, cancelar e encerrar. A edição só é permitida para matrículas ativas sem pagamentos ou notificações vinculados. A exclusão é exclusiva do administrador.
 
 Para conferir, execute `npm run dev`, entre como administrador ou recepção e abra **Matrículas**. Em **Nova matrícula**, informe IDs existentes de aluno e plano ativo, as datas e o valor contratado em reais. Os IDs estão nos detalhes das telas de alunos e planos. O valor zero é aceito. A matrícula é criada ativa; datas e valor são informados explicitamente e não são recalculados a partir do plano. Use os filtros, **Anterior**, **Próxima** e **Detalhes** para consultar. Para um ensaio sem dados reais, `npm run test:matriculas` cria dados sintéticos em banco temporário e verifica também a interface.
 

@@ -41,8 +41,8 @@ class VerificarMatriculas {
       assert.equal(detalhes.aluno_nome, 'Aluno sintético'); assert.equal(detalhes.plano_nome, 'Outro plano'); assert.equal(detalhes.valor_contratado_centavos, 9990);
       for (const entrada of [{ pagina: 0, tamanho: 10 }, { pagina: 1, tamanho: 101 }, { pagina: 1, tamanho: 10, aluno_id: '1 OR 1=1' }, { pagina: 1, tamanho: 10, situacao: 'invalida' }, { pagina: 1, tamanho: 10, extra: 1 }]) this.falha(await consultar(admin, 'listar', entrada), 'VALIDACAO');
       this.falha(await consultar(admin, 'obter', { id: 999 }), 'NAO_ENCONTRADO');
-      for (const [janela, esperado] of [[instrutor,'SEM_PERMISSAO'],[anonimo,'NAO_AUTENTICADO']] as const) for (const metodo of ['listar','obter']) this.falha(await consultar(janela, metodo, {}), esperado);
-      assert.deepEqual(await admin.webContents.executeJavaScript('Object.keys(window.academia.matriculas)'), ['criar','cancelar','encerrar','excluir','listar','obter']);
+      for (const [janela, esperado] of [[instrutor,'SEM_PERMISSAO'],[anonimo,'NAO_AUTENTICADO']] as const) for (const metodo of ['listar','obter','atualizar']) this.falha(await consultar(janela, metodo, {}), esperado);
+      assert.deepEqual(await admin.webContents.executeJavaScript('Object.keys(window.academia.matriculas)'), ['criar','cancelar','encerrar','excluir','listar','obter','atualizar']);
       const novo = { aluno_id: aluno.id, plano_id: outro.id, data_inicio: '2026-01-31', data_fim: '2026-02-28', valor_contratado_centavos: 0 };
       this.falha(await consultar(admin, 'criar', novo), 'CONFLITO');
       const primeiro = this.ok(await consultar(recepcao, 'criar', { ...novo, data_inicio: '2026-02-01' })) as { id: number; situacao: string; valor_contratado_centavos: number };
@@ -52,6 +52,48 @@ class VerificarMatriculas {
       this.falha(await consultar(admin, 'criar', { ...novo, plano_id: inativo.id }), 'VALIDACAO');
       this.falha(await consultar(instrutor, 'criar', novo), 'SEM_PERMISSAO');
       this.falha(await consultar(anonimo, 'criar', novo), 'NAO_AUTENTICADO');
+      const alunoEdicao = alunos.create({ nome: 'Aluno de edição', cpf: '11144477735', data_nascimento: '2000-01-01', email: null, telefone: null, cep: '01001000', logradouro: 'Rua', numero: '2', complemento: null, bairro: 'Centro', cidade: 'São Paulo', uf: 'SP', ativo: 1, telegram_chat_id: null, autorizado_notificar_em: null });
+      const matriculaEdicao = this.ok(await consultar(recepcao, 'criar', { aluno_id: alunoEdicao.id, plano_id: plano.id,
+        data_inicio: '2026-05-01', data_fim: '2026-05-31', valor_contratado_centavos: 10000 })) as { id: number; referencia: string; atualizado_em: string };
+      banco.preparar<[number], never>("UPDATE matriculas SET atualizado_em='2000-01-01T00:00:00.000Z' WHERE id=?").run(matriculaEdicao.id);
+      const referenciaInicial = this.ok(await consultar(recepcao, 'obter', { id: matriculaEdicao.id })) as { referencia: string };
+      const alteracoes = { aluno_id: aluno.id, plano_id: outro.id, data_inicio: '2026-06-01', data_fim: '2026-06-30', valor_contratado_centavos: 12550 };
+      this.falha(await consultar(recepcao, 'atualizar', { id: matriculaEdicao.id, referencia: referenciaInicial.referencia,
+        alteracoes: { ...alteracoes, aluno_id: 999 } }), 'VALIDACAO');
+      this.falha(await consultar(recepcao, 'atualizar', { id: matriculaEdicao.id, referencia: referenciaInicial.referencia,
+        alteracoes: { ...alteracoes, plano_id: inativo.id } }), 'VALIDACAO');
+      for (const invalida of [{ data_inicio: '2026-02-30' }, { data_inicio: '2026-07-01', data_fim: '2026-06-01' }]) {
+        this.falha(await consultar(recepcao, 'atualizar', { id: matriculaEdicao.id, referencia: referenciaInicial.referencia,
+          alteracoes: { ...alteracoes, ...invalida } }), 'VALIDACAO');
+      }
+      this.falha(await consultar(instrutor, 'atualizar', { id: matriculaEdicao.id, referencia: referenciaInicial.referencia, alteracoes }), 'SEM_PERMISSAO');
+      this.falha(await consultar(anonimo, 'atualizar', { id: matriculaEdicao.id, referencia: referenciaInicial.referencia, alteracoes }), 'NAO_AUTENTICADO');
+      const atualizada = this.ok(await consultar(recepcao, 'atualizar', { id: matriculaEdicao.id,
+        referencia: referenciaInicial.referencia, alteracoes })) as { id: number; aluno_id: number; plano_id: number; data_inicio: string; data_fim: string; valor_contratado_centavos: number; atualizado_em: string; referencia: string };
+      assert.equal(atualizada.aluno_id, aluno.id); assert.equal(atualizada.plano_id, outro.id);
+      assert.equal(atualizada.data_inicio, '2026-06-01'); assert.equal(atualizada.data_fim, '2026-06-30');
+      assert.equal(atualizada.valor_contratado_centavos, 12550); assert.notEqual(atualizada.referencia, referenciaInicial.referencia);
+      assert.notEqual(atualizada.atualizado_em, '2000-01-01T00:00:00.000Z');
+      this.falha(await consultar(recepcao, 'atualizar', { id: matriculaEdicao.id, referencia: referenciaInicial.referencia, alteracoes }), 'CONFLITO');
+      this.ok(await consultar(recepcao, 'criar', { aluno_id: aluno.id, plano_id: plano.id,
+        data_inicio: '2026-07-01', data_fim: '2026-07-31', valor_contratado_centavos: 9000 }));
+      this.falha(await consultar(recepcao, 'atualizar', { id: matriculaEdicao.id, referencia: atualizada.referencia,
+        alteracoes: { ...alteracoes, data_inicio: '2026-07-15', data_fim: '2026-08-15' } }), 'CONFLITO');
+      const antesConcorrencia = this.ok(await consultar(recepcao, 'obter', { id: matriculaEdicao.id })) as typeof atualizada;
+      const concorrentesEdicao = await Promise.all([
+        consultar(admin, 'atualizar', { id: matriculaEdicao.id, referencia: antesConcorrencia.referencia, alteracoes: { ...alteracoes, valor_contratado_centavos: 13000 } }),
+        consultar(recepcao, 'atualizar', { id: matriculaEdicao.id, referencia: antesConcorrencia.referencia, alteracoes: { ...alteracoes, valor_contratado_centavos: 14000 } })
+      ]);
+      assert.equal(concorrentesEdicao.filter(r => r.sucesso).length, 1);
+      assert.equal(concorrentesEdicao.filter(r => !r.sucesso && r.erro.codigo === 'CONFLITO').length, 1);
+      const antesRollback = this.ok(await consultar(recepcao, 'obter', { id: matriculaEdicao.id })) as typeof atualizada;
+      const linhaAntesRollback = banco.preparar<[number], Record<string, unknown>>('SELECT * FROM matriculas WHERE id=?').get(matriculaEdicao.id);
+      banco.preparar<[], never>(`CREATE TRIGGER falha_edicao_matricula BEFORE UPDATE OF valor_contratado_centavos ON matriculas
+        WHEN NEW.id=${matriculaEdicao.id} BEGIN SELECT RAISE(ABORT, 'falha simulada'); END;`).run();
+      this.falha(await consultar(recepcao, 'atualizar', { id: matriculaEdicao.id, referencia: antesRollback.referencia,
+        alteracoes: { ...alteracoes, valor_contratado_centavos: 15000 } }), 'INTERNO');
+      assert.deepEqual(banco.preparar<[number], Record<string, unknown>>('SELECT * FROM matriculas WHERE id=?').get(matriculaEdicao.id), linhaAntesRollback);
+      banco.preparar<[], never>('DROP TRIGGER falha_edicao_matricula').run();
       const simultaneo = { ...novo, data_inicio: '2026-03-01', data_fim: '2026-03-31' };
       const concorrentes = await Promise.all([consultar(admin, 'criar', simultaneo), consultar(recepcao, 'criar', simultaneo)]);
       assert.equal(concorrentes.filter(r => r.sucesso).length, 1); assert.equal(concorrentes.filter(r => !r.sucesso && r.erro.codigo === 'CONFLITO').length, 1);
@@ -71,6 +113,10 @@ class VerificarMatriculas {
       await recepcao.webContents.executeJavaScript("document.querySelector('#nova-matricula').click(); const f=document.querySelector('#form-matricula'); f.elements.aluno_id.value='1'; f.elements.plano_id.value='1'; f.elements.data_inicio.value='2026-05-01'; f.elements.data_fim.value='2026-05-31'; f.elements.valor.value='25,50'; f.requestSubmit()");
       await this.aguardar(recepcao, "document.querySelector('#mensagem-matriculas').textContent.includes('cadastrada')");
       assert.equal(banco.preparar<[], { total: number }>("SELECT COUNT(*) AS total FROM matriculas WHERE data_inicio='2026-05-01' AND valor_contratado_centavos=2550").get()?.total, 1);
+      await this.aguardar(recepcao, "document.querySelector('#editar-matricula') !== null");
+      await recepcao.webContents.executeJavaScript("document.querySelector('#editar-matricula').click(); const fe=document.querySelector('#form-editar-matricula'); fe.elements.valor.value='30,75'; fe.requestSubmit()");
+      await this.aguardar(recepcao, "document.querySelector('#mensagem-matriculas').textContent.includes('atualizada')");
+      assert.equal(banco.preparar<[], { total: number }>("SELECT COUNT(*) AS total FROM matriculas WHERE data_inicio='2026-05-01' AND valor_contratado_centavos=3075").get()?.total, 1);
       banco.preparar<[], never>("INSERT INTO pagamentos (matricula_id,competencia,data_vencimento,valor_centavos,situacao,criado_em,atualizado_em) VALUES (2,'2026-01','2026-01-31',9990,'pendente','UTC','UTC')").run();
       banco.preparar<[], never>("INSERT INTO notificacoes (matricula_id,tipo,canal,chave_deduplicacao,agendada_para,situacao,tentativas,criado_em,atualizado_em) VALUES (2,'vencimento_plano','teste','matricula-2','UTC','pendente',0,'UTC','UTC')").run();
       const antes = banco.preparar<[], Record<string, unknown>>('SELECT * FROM matriculas WHERE id=2').get();
@@ -121,7 +167,13 @@ class VerificarMatriculas {
       banco.preparar<[number], never>("INSERT INTO pagamentos (matricula_id,competencia,data_vencimento,valor_centavos,situacao,criado_em,atualizado_em) VALUES (?,'2026-01','2026-01-31',0,'pendente','UTC','UTC')").run(pagamentoSomente);
       banco.preparar<[number], never>("INSERT INTO notificacoes (matricula_id,tipo,canal,chave_deduplicacao,agendada_para,situacao,tentativas,criado_em,atualizado_em) VALUES (?,'vencimento_plano','teste','apenas-notificacao','UTC','pendente',0,'UTC','UTC')").run(notificacaoSomente);
       for (const id of [pagamentoSomente, notificacaoSomente]) {
-        const m = this.ok(await consultar(admin, 'obter', { id })) as { referencia: string };
+        const m = this.ok(await consultar(admin, 'obter', { id })) as { referencia: string; aluno_id: number; plano_id: number; data_inicio: string; data_fim: string; valor_contratado_centavos: number };
+        const estadoAntes = banco.preparar<[number], Record<string, unknown>>('SELECT * FROM matriculas WHERE id=?').get(id);
+        this.falha(await consultar(admin, 'atualizar', { id, referencia: m.referencia, alteracoes: {
+          aluno_id: m.aluno_id, plano_id: m.plano_id, data_inicio: m.data_inicio, data_fim: m.data_fim,
+          valor_contratado_centavos: m.valor_contratado_centavos + 1
+        } }), 'CONFLITO');
+        assert.deepEqual(banco.preparar<[number], Record<string, unknown>>('SELECT * FROM matriculas WHERE id=?').get(id), estadoAntes);
         const bloqueio = await consultar(admin, 'excluir', { id, referencia: m.referencia });
         this.falha(bloqueio, 'CONFLITO');
         assert.ok(!bloqueio.sucesso && JSON.stringify(bloqueio.erro.campos).includes('pagamentos ou notificações'));
