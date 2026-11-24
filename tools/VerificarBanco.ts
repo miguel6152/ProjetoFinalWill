@@ -1,3 +1,6 @@
+import { Migracao005Entregas } from '../src/database/migrations/Migracao005Entregas';
+import { Migracao006AuditoriaPagamentos } from '../src/database/migrations/Migracao006AuditoriaPagamentos';
+import { Migracao004AvisosInternos } from '../src/database/migrations/Migracao004AvisosInternos';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -37,6 +40,7 @@ class VerificarBanco {
       console.log(`Runtime: Electron ${process.versions.electron}, Node ${process.versions.node}, ABI ${process.versions.modules}, Node-API ${process.versions.napi}`);
       this.ok('carregamento nativo e consulta parametrizada no processo Main do Electron');
       new Migrador(conexao, [this.migracao]).executar();
+      new Migracao006AuditoriaPagamentos().aplicar({ executarEstrutura: sql => conexao!.executarEstrutura(sql) });
       this.verificarSchema(conexao);
       this.povoar(conexao);
       this.verificarChaves(conexao);
@@ -67,7 +71,7 @@ class VerificarBanco {
     assert.ok(diagrama);
     const anulaveis: Record<string, readonly string[]> = {
       alunos: ['email', 'telefone', 'complemento', 'telegram_chat_id', 'autorizado_notificar_em'],
-      pagamentos: ['pago_em', 'forma_pagamento'], aulas: ['latitude', 'longitude'],
+      pagamentos: ['pago_em', 'forma_pagamento', 'cancelado_em', 'motivo_cancelamento', 'cancelado_por'], aulas: ['latitude', 'longitude'],
       avaliacoes_fisicas: ['cintura_cm', 'quadril_cm', 'braco_cm', 'coxa_cm', 'observacoes'],
       notificacoes: ['enviada_em', 'proxima_tentativa_em', 'mensagem_id_externo', 'erro_codigo']
     };
@@ -128,7 +132,7 @@ class VerificarBanco {
 
   private verificarChaves(conexao: Conexao): void {
     const relacionamentos: Record<string, Record<string, string>> = {
-      matriculas: { aluno_id: 'alunos', plano_id: 'planos' }, pagamentos: { matricula_id: 'matriculas' },
+      matriculas: { aluno_id: 'alunos', plano_id: 'planos' }, pagamentos: { matricula_id: 'matriculas', cancelado_por: 'usuarios' },
       instrutores: { usuario_id: 'usuarios' }, aulas: { instrutor_id: 'instrutores' },
       inscricoes_aula: { aula_id: 'aulas', aluno_id: 'alunos' },
       avaliacoes_fisicas: { aluno_id: 'alunos', instrutor_id: 'instrutores' }, notificacoes: { matricula_id: 'matriculas' }
@@ -150,8 +154,8 @@ class VerificarBanco {
         total++;
       }
     }
-    assert.equal(total, 10);
-    this.ok('dez FKs reais, índices, rejeição de órfãos e exclusão RESTRICT em cada vínculo');
+    assert.equal(total, 11);
+    this.ok('onze FKs reais, índices, rejeição de órfãos e exclusão RESTRICT em cada vínculo');
   }
 
   private verificarConstraints(conexao: Conexao): void {
@@ -275,7 +279,7 @@ class VerificarBanco {
       const historico = conexao.preparar<[], unknown>('SELECT * FROM migrations').all();
       conexao.fechar();
       conexao = new Conexao(caminho);
-      new Migrador(conexao, [this.migracao, new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial()]).executar();
+      new Migrador(conexao, [this.migracao, new Migracao002IdentidadeConta(), new Migracao003VersaoCredencial(), new Migracao004AvisosInternos(), new Migracao005Entregas(), new Migracao006AuditoriaPagamentos()]).executar();
       assert.deepEqual(conexao.preparar<[], unknown>('SELECT * FROM migrations').all(), historico);
       assert.equal(conexao.preparar<[], { nome: string }>('SELECT nome FROM planos WHERE id=1').get()?.nome, 'Persistente Fictício');
       assert.equal(conexao.preparar<[], { foreign_keys: number }>('PRAGMA foreign_keys').get()?.foreign_keys, 1);
