@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Database = require('better-sqlite3');
 import { app } from 'electron';
-import { BancoDemonstracao, EMAIL_ADMIN_DEMO } from './demo/BancoDemonstracao';
+import { BancoDemonstracao, EMAIL_ADMIN_DEMO } from '../src/main/demo/BancoDemonstracao';
+import { PreparadorDemonstracao } from '../src/main/demo/PreparadorDemonstracao';
 import { EntradaSenhaOculta, type DependenciasPrompt, type EntradaTerminal } from './demo/EntradaSenhaOculta';
 import { IdentidadeAplicacao } from '../src/shared/IdentidadeAplicacao';
 
@@ -21,7 +22,10 @@ void app.whenReady().then(async () => {
     const demo = path.join(pasta, 'academia-demo.sqlite3');
     const sentinela = Buffer.from('banco real de teste; não alterar');
     writeFileSync(producao, sentinela, { flag: 'wx' });
-    assert.equal(await BancoDemonstracao.preparar(pasta, 'senha-demo-segura-com-15-caracteres'), 'criado');
+    await assert.rejects(new PreparadorDemonstracao().executar(pasta, 'curta', 'curta'), /15 caracteres/);
+    await assert.rejects(new PreparadorDemonstracao().executar(pasta, 'senha-demo-segura-com-15-caracteres', 'senha-errada-com-15-caracteres'), /não coincidem/);
+    assert.equal(existsSync(demo), false, 'senha inválida ou não confirmada não cria banco demo');
+    assert.equal(await new PreparadorDemonstracao().executar(pasta, 'senha-demo-segura-com-15-caracteres', 'senha-demo-segura-com-15-caracteres'), 'criado');
     assert.deepEqual(readFileSync(producao), sentinela, 'arquivo de produção permanece byte a byte intacto');
     const db = new Database(demo, { readonly: true, fileMustExist: true });
     try {
@@ -46,7 +50,7 @@ void app.whenReady().then(async () => {
       assert.ok(hashes.every(x => !x.senha_hash.includes('senha-demo-segura')));
     } finally { db.close(); }
     const snapshotDemo = readFileSync(demo);
-    assert.equal(await BancoDemonstracao.preparar(pasta, 'outra-senha-qualquer-para-teste'), 'ja-preparado');
+    assert.equal(await new PreparadorDemonstracao().executar(pasta, 'outra-senha-qualquer-para-teste', 'outra-senha-qualquer-para-teste'), 'ja-preparado');
     assert.deepEqual(readFileSync(demo), snapshotDemo, 'segunda execução não altera nem duplica o banco demo');
     assert.deepEqual(readFileSync(producao), sentinela);
 
@@ -55,7 +59,7 @@ void app.whenReady().then(async () => {
     const bytesDesconhecidos = Buffer.from('não sobrescrever');
     mkdirSync(pastaComDemoDesconhecido);
     writeFileSync(demoDesconhecido, bytesDesconhecidos, { flag: 'wx' });
-    await assert.rejects(BancoDemonstracao.preparar(pastaComDemoDesconhecido, 'senha-demo-segura-com-15-caracteres'));
+    await assert.rejects(new PreparadorDemonstracao().executar(pastaComDemoDesconhecido, 'senha-demo-segura-com-15-caracteres', 'senha-demo-segura-com-15-caracteres'));
     assert.deepEqual(readFileSync(demoDesconhecido), bytesDesconhecidos);
     stdoutOk();
   } catch (erro: unknown) {

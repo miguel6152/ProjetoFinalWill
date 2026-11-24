@@ -1,6 +1,6 @@
 {
   "name": "sistema-academia",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Sistema desktop de gestão da academia",
   "main": "dist/src/main/Aplicacao.js",
@@ -35,6 +35,7 @@
     "demo:seed": "npm run build && electron dist/tools/PrepararDemonstracao.js",
     "demo": "npm run build && electron . --demo",
     "test:demo": "npm run build && electron dist/tools/VerificarDemonstracao.js",
+    "test:demo:empacotado": "npm run build && node dist/tools/VerificarPacoteDemonstracao.js",
     "start": "electron .",
     "dev": "npm run build && npm start",
     "test:infra": "npm run build && electron dist/tools/VerificarInfraestrutura.js",
@@ -99,6 +100,7 @@
       ]
     },
     "nsis": {
+      "include": "installer/windows.nsh",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,

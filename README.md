@@ -67,7 +67,7 @@ As decisões de segurança e suas justificativas estão em [SEGURANCA.md](SEGURA
 
 ## Instalador Windows x64
 
-O empacotamento usa Electron Builder 26 e NSIS. Gere o instalador em Windows x64 com Node 24 (definido em `.nvmrc`) e dependências instaladas:
+Versão distribuível atual: **0.1.1**. O empacotamento usa Electron Builder 26 e NSIS. Gere o instalador em Windows x64 com Node 24 (definido em `.nvmrc`) e dependências instaladas:
 
 ```powershell
 npm ci
@@ -176,6 +176,14 @@ Durante `demo:seed`, informe e confirme a senha do administrador demo (mínimo d
 O preparador usa as migrations existentes para criar o arquivo novo e semeia o banco separado com chaves estrangeiras habilitadas. A demonstração contém 15 alunos, 5 instrutores, 5 planos, 15 matrículas, pagamentos em estados distintos, aulas e inscrições, avaliações com histórico e avisos de vencimento. `npm run test:demo` verifica isolamento do banco normal, integridade referencial e idempotência em diretórios temporários.
 
 Em uma instalação Windows distribuída, inicie o executável com `--demo` para selecionar o banco demo no mesmo perfil Windows, depois de prepará-lo. O executável sem essa opção continua usando `academia.sqlite3`.
+
+Na versão instalada, o Menu Iniciar oferece os atalhos **Preparar demonstração** e **Abrir demonstração**. O primeiro abre uma tela local que solicita e confirma a senha sem mostrá-la; não requer Node.js, npm, terminal ou arquivos de desenvolvimento. O hash Argon2id é gravado apenas no banco demo. O segundo atalho abre o executável com `--demo` e só inicia se `academia-demo.sqlite3` já existir. O botão **Abrir demonstração** na tela de preparação também inicia o modo demo após o sucesso.
+
+Se o banco demo já existir e for reconhecido, a preparação informa que não houve alterações e mantém o hash e os dados existentes. Um arquivo com conteúdo não reconhecido é preservado e a operação é recusada. Cancelar antes do início não cria banco; durante a gravação, a janela impede o fechamento até que a operação termine. O gerador cria o arquivo temporário e publica o destino de forma exclusiva. O processo `--preparar-demo` não inicializa a composição da aplicação e não abre `academia.sqlite3`.
+
+No Windows, os dois atalhos são instalados por usuário no Menu Iniciar e removidos na desinstalação. Os bancos ficam em `%APPDATA%\sistema-academia`; a configuração NSIS mantém `userData` durante desinstalação e reinstalação. O atalho normal e a inicialização sem argumentos continuam usando `academia.sqlite3`; o atalho demo usa somente `academia-demo.sqlite3`.
+
+Para validar o conteúdo da pasta empacotada antes de gerar o `.exe`, execute `npm run dist:dir:win:x64`. Em seguida, com `release/win-unpacked` criado, execute `npm run test:demo:empacotado` para testar a tela do app distribuído com um perfil temporário. Se essas verificações passarem, gere o instalador NSIS com `npm run dist:win:x64`; o artefato esperado é `release/Sistema de Academia Setup 0.1.1.exe`. A geração pode baixar artefatos de build não armazenados em cache; o instalador concluído é offline no computador de destino.
 
 ## Fluxo de trabalho no Git
 

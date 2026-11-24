@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>Preparar demonstração</title>
+    <link rel="stylesheet" href="./Estilos.css">
+    <script src="./PrepararDemonstracao.js" type="module"></script>
+  </head>
+  <body>
+    <header><div><span class="marca">SISTEMA DE ACADEMIA</span><h1>Preparar demonstração</h1></div></header>
+    <main>
+      <section class="cartao acesso">
+        <p>Será criado um banco de demonstração separado. O banco normal não será aberto nem alterado.</p>
+        <form id="formulario-demo" autocomplete="off">
+          <label for="senha-demo">Senha do administrador demo (mínimo de 15 caracteres)
+            <input id="senha-demo" name="senha" type="password" minlength="15" maxlength="1024" autocomplete="new-password" required>
+          </label>
+          <label for="confirmacao-demo">Confirme a senha
+            <input id="confirmacao-demo" name="confirmacao" type="password" minlength="15" maxlength="1024" autocomplete="new-password" required>
+          </label>
+          <p id="mensagem-demo" class="mensagem" role="status" aria-live="polite"></p>
+          <div class="acoes">
+            <button id="preparar-demo" type="submit">Preparar banco demo</button>
+            <button id="abrir-demo" type="button" hidden>Abrir demonstração</button>
+            <button id="cancelar-demo" type="button" class="botao-secundario">Cancelar</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

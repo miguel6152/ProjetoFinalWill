@@ -3,14 +3,14 @@ import { existsSync, mkdirSync, mkdtempSync, linkSync, readFileSync, rmSync, sta
 import path from 'node:path';
 import Database = require('better-sqlite3');
 import argon2 from 'argon2';
-import { Conexao } from '../../src/database/Conexao';
-import { Migrador } from '../../src/database/Migrador';
-import { Migracao001EstruturaInicial } from '../../src/database/migrations/Migracao001EstruturaInicial';
-import { Migracao002IdentidadeConta } from '../../src/database/migrations/Migracao002IdentidadeConta';
-import { Migracao003VersaoCredencial } from '../../src/database/migrations/Migracao003VersaoCredencial';
-import { Migracao004AvisosInternos } from '../../src/database/migrations/Migracao004AvisosInternos';
-import { Migracao005Entregas } from '../../src/database/migrations/Migracao005Entregas';
-import { Migracao006AuditoriaPagamentos } from '../../src/database/migrations/Migracao006AuditoriaPagamentos';
+import { Conexao } from '../../database/Conexao';
+import { Migrador } from '../../database/Migrador';
+import { Migracao001EstruturaInicial } from '../../database/migrations/Migracao001EstruturaInicial';
+import { Migracao002IdentidadeConta } from '../../database/migrations/Migracao002IdentidadeConta';
+import { Migracao003VersaoCredencial } from '../../database/migrations/Migracao003VersaoCredencial';
+import { Migracao004AvisosInternos } from '../../database/migrations/Migracao004AvisosInternos';
+import { Migracao005Entregas } from '../../database/migrations/Migracao005Entregas';
+import { Migracao006AuditoriaPagamentos } from '../../database/migrations/Migracao006AuditoriaPagamentos';
 
 export const ARQUIVO_DEMO = 'academia-demo.sqlite3';
 export const EMAIL_ADMIN_DEMO = 'administrador.demo@example.invalid';
