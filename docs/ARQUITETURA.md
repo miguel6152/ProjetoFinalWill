@@ -91,6 +91,9 @@ erDiagram
         TEXT pago_em
         TEXT forma_pagamento
         TEXT situacao
+        TEXT cancelado_em
+        TEXT motivo_cancelamento
+        INTEGER cancelado_por FK
         TEXT criado_em
         TEXT atualizado_em
     }
@@ -164,6 +167,7 @@ erDiagram
     alunos ||--o{ matriculas : possui
     planos ||--o{ matriculas : define
     matriculas ||--o{ pagamentos : gera
+    usuarios o|--o{ pagamentos : cancela
     matriculas ||--o{ notificacoes : origina
     instrutores ||--o{ aulas : ministra
     aulas ||--o{ inscricoes_aula : recebe
@@ -175,10 +179,10 @@ erDiagram
 ### Integridade e significado dos dados
 
 - `usuarios.perfil`: `admin`, `recepcao` ou `instrutor`; e-mail normalizado e único. `instrutores.usuario_id` é obrigatório e único; o service exige usuário ativo com perfil instrutor. Admin não precisa de cadastro de instrutor para administrar avaliações.
-- Anuláveis em alunos: e-mail, telefone, complemento, `telegram_chat_id` e `autorizado_notificar_em`. Em pagamentos: `pago_em` e `forma_pagamento`. Em aulas: latitude e longitude apenas quando internas. Em avaliações: cintura, quadril, braço, coxa e observações. Em notificações: envio, próxima tentativa, identificador externo e código de erro.
+- Anuláveis em alunos: e-mail, telefone, complemento, `telegram_chat_id` e `autorizado_notificar_em`. Em pagamentos: `pago_em`, `forma_pagamento`, `cancelado_em`, `motivo_cancelamento` e `cancelado_por` (os três últimos registram o cancelamento lógico). Em aulas: latitude e longitude apenas quando internas. Em avaliações: cintura, quadril, braço, coxa e observações. Em notificações: envio, próxima tentativa, identificador externo e código de erro.
 - CPF armazena apenas dígitos e deve ser validado. CPF completo só aparece na consulta individual administrativa necessária à edição; listagens usam CPF mascarado. Instrutor recebe projeção sem CPF, contato ou endereço.
 - Planos têm duração de 1, 3 ou 12 meses. `valor_contratado_centavos` preserva o preço combinado mesmo após alteração do plano. A matrícula possui intervalo inclusivo válido e situação `ativa`, `cancelada` ou `encerrada`; vencimento é derivado da data final.
-- Pagamentos representam cobranças, inclusive antes da quitação: situação `pendente`, `pago` ou `cancelado`. Inadimplência é derivada de cobrança pendente com vencimento anterior à data local atual. `competencia` usa `YYYY-MM`; chave composta única `(matricula_id, competencia)`. Pagamento quitado exige instante de quitação e forma `dinheiro`, `pix`, `cartao` ou `transferencia`.
+- Pagamentos representam cobranças, inclusive antes da quitação: situação `pendente`, `pago` ou `cancelado`. Inadimplência é derivada de cobrança pendente com vencimento anterior à data local atual. `competencia` usa `YYYY-MM`; chave composta única `(matricula_id, competencia)`. Pagamento quitado exige instante de quitação e forma `dinheiro`, `pix`, `cartao` ou `transferencia`. Apenas cobranças pendentes podem ser editadas. Cancelamento é lógico, exige motivo e registra instante e usuário responsável; pagamentos finalizados são imutáveis e não podem ser removidos fisicamente.
 - Cada aula é uma ocorrência com início e fim, modalidade `musculacao`, `funcional` ou `danca`, capacidade positiva e situação `agendada`, `cancelada` ou `concluida`. Aulas externas exigem coordenadas válidas. Não há recorrência implícita.
 - Inscrição tem chave única `(aula_id, aluno_id)`, situação `ativa` ou `cancelada` e presença `nao_registrada`, `presente` ou `ausente`. Presença pertence à inscrição, permitindo relatórios de frequência sem tabela adicional.
 - Avaliações usam unidades explícitas, valores positivos e limites plausíveis validados no service. Evolução é a série cronológica de avaliações do aluno.

@@ -4,6 +4,9 @@ import { Migrador } from '../src/database/Migrador';
 import { Migracao001EstruturaInicial } from '../src/database/migrations/Migracao001EstruturaInicial';
 import { Migracao002IdentidadeConta } from '../src/database/migrations/Migracao002IdentidadeConta';
 import { Migracao003VersaoCredencial } from '../src/database/migrations/Migracao003VersaoCredencial';
+import { Migracao004AvisosInternos } from '../src/database/migrations/Migracao004AvisosInternos';
+import { Migracao005Entregas } from '../src/database/migrations/Migracao005Entregas';
+import { Migracao006AuditoriaPagamentos } from '../src/database/migrations/Migracao006AuditoriaPagamentos';
 import { PagamentoRepository } from '../src/repositories/PagamentoRepository';
 import { InadimplenciaService } from '../src/services/InadimplenciaService';
 import type { FiltroInadimplencia } from '../src/shared/tipos/Inadimplencia';
@@ -13,7 +16,10 @@ class VerificarInadimplencia {
     const banco = new Conexao(':memory:');
     try {
       new Migrador(banco, [new Migracao001EstruturaInicial(), new Migracao002IdentidadeConta(),
-        new Migracao003VersaoCredencial()]).executar();
+        new Migracao003VersaoCredencial(), new Migracao004AvisosInternos(), new Migracao005Entregas(),
+        new Migracao006AuditoriaPagamentos()]).executar();
+      banco.preparar<[], never>(`INSERT INTO usuarios (nome,email,senha_hash,perfil,ativo,criado_em,atualizado_em)
+        VALUES ('Admin','admin@example.invalid','hash-sintetico','admin',1,'UTC','UTC')`).run();
       banco.executarEstrutura(`
         INSERT INTO planos (id,nome,duracao_meses,valor_centavos,ativo,criado_em,atualizado_em)
         VALUES (1,'Mensal',1,10000,1,'UTC','UTC');
@@ -33,11 +39,18 @@ class VerificarInadimplencia {
       matricula.run(3, 'ativa');
       const pagamentos = new PagamentoRepository(banco);
       const criar = (matricula_id: number, competencia: string, data_vencimento: string, valor_centavos: number,
-        situacao: 'pago' | 'cancelado' | 'pendente' = 'pendente') => pagamentos.create({
-        matricula_id, competencia, data_vencimento, valor_centavos, situacao,
-        pago_em: situacao === 'pago' ? '2025-12-31T00:00:00Z' : null,
-        forma_pagamento: situacao === 'pago' ? 'pix' : null
-      });
+        situacao: 'pago' | 'cancelado' | 'pendente' = 'pendente') => {
+        const pagamento = pagamentos.create({ matricula_id, competencia, data_vencimento, valor_centavos,
+          situacao: situacao === 'cancelado' ? 'pendente' : situacao,
+          pago_em: situacao === 'pago' ? '2025-12-31T00:00:00Z' : null,
+          forma_pagamento: situacao === 'pago' ? 'pix' : null,
+          cancelado_em: null, motivo_cancelamento: null, cancelado_por: null });
+        if (situacao !== 'cancelado') return pagamento;
+        assert.ok(pagamentos.cancelarPendente(pagamento.id, pagamento.atualizado_em, 'Cancelamento de teste.', 1));
+        const cancelado = pagamentos.findById(pagamento.id);
+        assert.ok(cancelado);
+        return cancelado;
+      };
       const primeira = criar(1, '2025-11', '2025-11-30', 10000);
       const segunda = criar(2, '2025-12', '2025-12-31', 15000);
       criar(3, '2026-01', '2026-01-01', 10000);

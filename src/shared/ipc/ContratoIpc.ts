@@ -3,7 +3,7 @@ import type { FiltroRelatorio, EvolucaoDto, FrequenciaDto } from '../tipos/Relat
 import type { AlterarPreferencia, EntregaDto, ModoEntrega, PreferenciaDto } from '../tipos/Entrega';
 import type { FiltroAvisos, AvisoDto } from '../tipos/Aviso';
 import type { FiltroInadimplencia, ResumoInadimplencia } from '../tipos/Inadimplencia';
-import type { NovaMensalidade, Recebimento, PagamentoDto, FiltroPagamentos } from '../tipos/Pagamento';
+import type { NovaMensalidade, Recebimento, PagamentoDto, FiltroPagamentos, AtualizacaoPagamento, CancelamentoPagamento } from '../tipos/Pagamento';
 import type { EntradaLista, PaginaIpc as Pagina } from '../tipos/Paginacao';
 import type { NovoAluno, AlunoDto, AlunoResumoDto, AlunoInstrutorDto } from '../tipos/Aluno';
 import type { EnderecoDto } from '../tipos/Endereco';
@@ -12,8 +12,8 @@ import type { NovoInstrutor, InstrutorDto } from '../tipos/Instrutor';
 import type { NovaAula, AulaDto, FiltroAgenda } from '../tipos/Aula';
 import type { NovaInscricao, InscricaoDto, FiltroInscricoes } from '../tipos/Inscricao';
 import type { NovaAvaliacao, AvaliacaoDto, FiltroAvaliacoes } from '../tipos/Avaliacao';
-import type { ListaMatriculas, MatriculaDto, NovaMatricula } from '../tipos/Matricula';
-export type { ListaMatriculas, MatriculaDto, NovaMatricula } from '../tipos/Matricula';
+import type { AtualizacaoMatricula, ListaMatriculas, MatriculaDto, NovaMatricula } from '../tipos/Matricula';
+export type { AtualizacaoMatricula, ListaMatriculas, MatriculaDto, NovaMatricula } from '../tipos/Matricula';
 export type { NovoPlano, PlanoDto } from '../tipos/Plano';
 export type { NovoInstrutor, InstrutorDto } from '../tipos/Instrutor';
 export type { NovaAula, AulaDto, FiltroAgenda } from '../tipos/Aula';
@@ -64,12 +64,15 @@ export interface ContratoIpc {
   'pagamentos:listar': { entrada: FiltroPagamentos; saida: Pagina<PagamentoDto> };
   'pagamentos:obter': { entrada: { id: number }; saida: PagamentoDto };
   'pagamentos:quitar': { entrada: Recebimento; saida: PagamentoDto };
+  'pagamentos:atualizar': { entrada: AtualizacaoPagamento; saida: PagamentoDto };
+  'pagamentos:cancelar': { entrada: CancelamentoPagamento; saida: PagamentoDto };
   'matriculas:criar': { entrada: NovaMatricula; saida: MatriculaDto };
   'matriculas:cancelar': { entrada: { id: number }; saida: MatriculaDto };
   'matriculas:encerrar': { entrada: { id: number }; saida: MatriculaDto };
   'matriculas:excluir': { entrada: { id: number; referencia: string }; saida: { id: number; excluido: true } };
   'matriculas:listar': { entrada: ListaMatriculas; saida: Pagina<MatriculaDto> };
   'matriculas:obter': { entrada: { id: number }; saida: MatriculaDto };
+  'matriculas:atualizar': { entrada: AtualizacaoMatricula; saida: MatriculaDto };
   'planos:criar': { entrada: NovoPlano; saida: PlanoDto };
   'instrutores:criar': { entrada: NovoInstrutor; saida: InstrutorDto };
   'aulas:criar': { entrada: NovaAula; saida: AulaDto };
@@ -136,8 +139,10 @@ export interface PonteAcademia {
     readonly listar: MetodoIpc<'pagamentos:listar'>;
     readonly obter: MetodoIpc<'pagamentos:obter'>;
     readonly quitar: MetodoIpc<'pagamentos:quitar'>;
+    readonly atualizar: MetodoIpc<'pagamentos:atualizar'>;
+    readonly cancelar: MetodoIpc<'pagamentos:cancelar'>;
   };
-  readonly matriculas?: { readonly criar: MetodoIpc<'matriculas:criar'>; readonly listar: MetodoIpc<'matriculas:listar'>; readonly obter: MetodoIpc<'matriculas:obter'>; readonly cancelar: MetodoIpc<'matriculas:cancelar'>; readonly encerrar: MetodoIpc<'matriculas:encerrar'>; readonly excluir: MetodoIpc<'matriculas:excluir'> };
+  readonly matriculas?: { readonly criar: MetodoIpc<'matriculas:criar'>; readonly listar: MetodoIpc<'matriculas:listar'>; readonly obter: MetodoIpc<'matriculas:obter'>; readonly atualizar: MetodoIpc<'matriculas:atualizar'>; readonly cancelar: MetodoIpc<'matriculas:cancelar'>; readonly encerrar: MetodoIpc<'matriculas:encerrar'>; readonly excluir: MetodoIpc<'matriculas:excluir'> };
   readonly planos?: {
     readonly criar: MetodoIpc<'planos:criar'>;
     readonly listar: MetodoIpc<'planos:listar'>;

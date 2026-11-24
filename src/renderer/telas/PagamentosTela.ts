@@ -137,7 +137,15 @@ export class PagamentosTela {
     const resumo = detalhe.querySelector('p')!;
     resumo.textContent = `${item.aluno_nome} · Matrícula ${item.matricula_id} · ${item.competencia} · Vencimento ${this.data(item.data_vencimento)} · ${valor} · ${item.situacao}`;
     if (item.pago_em) resumo.append(` · Recebido em ${this.data(item.pago_em)} por ${item.forma_pagamento}.`);
-    if (item.situacao !== 'pendente' || !item.valor_centavos) return;
+    if (item.cancelado_em) resumo.append(` · Cancelado em ${this.data(item.cancelado_em)} por ${item.cancelado_por_nome ?? `usuário #${item.cancelado_por}`}. Motivo: ${item.motivo_cancelamento ?? 'não informado'}.`);
+    if (item.situacao !== 'pendente') return;
+    if (!voltar) {
+      const editar = document.createElement('button'); editar.type = 'button'; editar.id = 'editar-pagamento';
+      editar.textContent = 'Editar mensalidade'; editar.onclick = () => this.editar(item);
+      const cancelar = document.createElement('button'); cancelar.type = 'button'; cancelar.id = 'cancelar-pagamento';
+      cancelar.textContent = 'Cancelar mensalidade'; cancelar.onclick = () => this.confirmarCancelamento(item);
+      detalhe.append(editar, cancelar);
+    }
     const form = document.createElement('form');
     form.id = 'recebimento';
     form.innerHTML = `<label>Data do recebimento<input name="data" type="date" required></label>
@@ -157,5 +165,51 @@ export class PagamentosTela {
       this.detalhes(pago);
       return 'Recebimento integral registrado.';
     });
+  }
+
+  private editar(item: PagamentoDto): void {
+    const detalhe = this.painel.querySelector('#detalhe-financeiro')!;
+    detalhe.replaceChildren();
+    const titulo = document.createElement('h3'); titulo.textContent = 'Editar mensalidade pendente';
+    const form = document.createElement('form'); form.id = 'editar-form-pagamento';
+    form.innerHTML = `<label>Competência<input name="competencia" type="month" required></label>
+      <label>Vencimento<input name="vencimento" type="date" required></label>
+      <label>Valor devido (R$)<input name="valor" inputmode="decimal" required></label>
+      <button type="submit">Salvar alterações</button><button type="button" class="voltar-edicao">Voltar</button>`;
+    (form.elements.namedItem('competencia') as HTMLInputElement).value = item.competencia;
+    (form.elements.namedItem('vencimento') as HTMLInputElement).value = item.data_vencimento;
+    (form.elements.namedItem('valor') as HTMLInputElement).value = ValorMonetario.paraEntrada(item.valor_centavos);
+    form.querySelector<HTMLButtonElement>('.voltar-edicao')!.onclick = () => this.detalhes(item);
+    form.onsubmit = evento => {
+      evento.preventDefault();
+      void this.executar(async () => {
+        const valor = ValorMonetario.paraCentavos((form.elements.namedItem('valor') as HTMLInputElement).value);
+        if (!valor) throw new Error('Informe um valor positivo com até duas casas decimais.');
+        const atualizado = this.resultado(await this.api.atualizar({ id: item.id, referencia: item.referencia!, alteracoes: {
+          competencia: (form.elements.namedItem('competencia') as HTMLInputElement).value,
+          data_vencimento: (form.elements.namedItem('vencimento') as HTMLInputElement).value, valor_centavos: valor
+        } }));
+        await this.listar(); this.detalhes(atualizado); return 'Mensalidade atualizada.';
+      });
+    };
+    detalhe.append(titulo, form);
+  }
+
+  private confirmarCancelamento(item: PagamentoDto): void {
+    const detalhe = this.painel.querySelector('#detalhe-financeiro')!;
+    const titulo = document.createElement('h3'); titulo.textContent = 'Confirmar cancelamento';
+    const aviso = document.createElement('p'); aviso.textContent = `A mensalidade ${item.competencia} de ${item.aluno_nome}, no valor de ${ValorMonetario.formatar(item.valor_centavos)}, será cancelada. O registro e o motivo ficarão no histórico.`;
+    const form = document.createElement('form'); form.id = 'cancelar-form-pagamento';
+    form.innerHTML = '<label>Motivo do cancelamento (5 a 500 caracteres)<textarea name="motivo" minlength="5" maxlength="500" required></textarea></label><button type="submit">Confirmar cancelamento</button><button type="button" class="voltar-cancelamento">Voltar</button>';
+    form.querySelector<HTMLButtonElement>('.voltar-cancelamento')!.onclick = () => this.detalhes(item);
+    form.onsubmit = evento => {
+      evento.preventDefault();
+      void this.executar(async () => {
+        const cancelado = this.resultado(await this.api.cancelar({ id: item.id, referencia: item.referencia!,
+          motivo: (form.elements.namedItem('motivo') as HTMLTextAreaElement).value }));
+        await this.listar(); this.detalhes(cancelado); return 'Mensalidade cancelada e registrada no histórico.';
+      });
+    };
+    detalhe.replaceChildren(titulo, aviso, form);
   }
 }
