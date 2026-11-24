@@ -288,8 +288,8 @@ class VerificarSegurancaAutenticacao {
       this.preparar(conexao, digest);
       conexao.fechar();
       conexao = undefined;
-      const anterior = readFileSync(caminho);
       composicao.iniciar(caminho);
+      const anterior = readFileSync(caminho);
       janela = await new JanelaPrincipal().abrir(false, (criada, url) => composicao.vincularJanela(criada, url));
       this.janelas.push(janela);
       this.falha(await this.consultar(janela), 'NAO_AUTENTICADO');
@@ -298,7 +298,8 @@ class VerificarSegurancaAutenticacao {
       assert.deepEqual(await janela.webContents.executeJavaScript('window.academia.autenticacao.sair()'), { sucesso: true, dados: { encerrada: true } });
       this.falha(await this.consultar(janela), 'NAO_AUTENTICADO');
       composicao.encerrar();
-      assert.deepEqual(readFileSync(caminho), anterior, 'Autenticação/sessões alteraram o banco persistido de teste.');
+      const atual = readFileSync(caminho);
+      assert.equal(atual.equals(anterior), true, 'Autenticação/sessões alteraram o banco persistido de teste.');
       this.ok('composição real: migrations, janela, preload, login válido, consulta e logout; arquivo SQLite temporário inalterado');
     } finally {
       janela?.destroy();
