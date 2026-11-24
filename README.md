@@ -103,7 +103,45 @@ Na primeira abertura de um banco vazio, cadastre o administrador pelo formulári
 
 O banco fica em `app.getPath('userData')/academia.sqlite3`. Não armazene bancos reais no repositório. O aplicativo não apaga o banco para contornar falha de migration. Faça backup do arquivo com o aplicativo fechado antes de atualizar uma instalação com dados importantes.
 
-Para verificar: `npm run typecheck`, `npm run build` e os scripts `test:infra`, `test:banco`, `test:contratos`, `test:leituras`, `test:escritas`, `test:auth-contratos`, `test:auth`, `test:auth-banco`, `test:sessoes`, `test:auth-ipc`, `test:auth-seguranca`, `test:usuarios`, `test:inicializacao`, `test:politicas` e `test:interface`; execute também `npm audit` e `git diff --check`. Os testes usam exclusivamente memória e arquivos temporários.
+Após a instalação, valide o código com `npm run typecheck`, `npm run build` e cada script de teste disponível no `package.json`:
+
+```bash
+npm run test:integracao-julio
+npm run test:api-relatorios
+npm run test:clima
+npm run test:avaliacoes
+npm run test:inscricoes
+npm run test:aulas
+npm run test:instrutores
+npm run test:entregas
+npm run test:avisos
+npm run test:inadimplencia
+npm run test:pagamentos
+npm run test:matriculas
+npm run test:planos
+npm run test:planos-interface
+npm run test:viacep
+npm run test:viacep-interface
+npm run test:alunos
+npm run test:alunos-interface
+npm run test:infra
+npm run test:banco
+npm run test:contratos
+npm run test:leituras
+npm run test:escritas
+npm run test:auth-contratos
+npm run test:auth
+npm run test:auth-banco
+npm run test:sessoes
+npm run test:auth-ipc
+npm run test:auth-seguranca
+npm run test:usuarios
+npm run test:inicializacao
+npm run test:politicas
+npm run test:interface
+```
+
+Na validação de 23/11/2026, os 33 scripts `test:*`, `npm run typecheck` e `npm run build` foram concluídos com sucesso. Esse resultado registra aquela execução e não garante resultados futuros. Os testes usam exclusivamente memória e arquivos temporários. `npm audit` e `git diff --check` também podem ser executados como verificações adicionais.
 
 As opções não sensíveis estão em [.env.example](.env.example): 30 minutos de inatividade, 8 horas de duração máxima, 30 logins por minuto/janela, 120 por processo e quatro logins concorrentes. A aplicação lê variáveis do ambiente do processo; não carrega `.env` automaticamente. Por exemplo, `$env:SESSAO_INATIVIDADE_MS='1800000'` no PowerShell antes de `npm start`. Valores inválidos impedem a inicialização com erro controlado. A configuração do Telegram está listada em `.env.example`; o token real é fornecido pelo ambiente e não está versionado.
 
