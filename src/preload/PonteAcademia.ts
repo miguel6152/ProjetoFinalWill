@@ -74,14 +74,17 @@ class PonteAcademia {
       encerrar: entrada => ipcRenderer.invoke('matriculas:encerrar', entrada),
       excluir: entrada => ipcRenderer.invoke('matriculas:excluir', entrada),
       listar: entrada => ipcRenderer.invoke('matriculas:listar', entrada),
-      obter: entrada => ipcRenderer.invoke('matriculas:obter', entrada)
+      obter: entrada => ipcRenderer.invoke('matriculas:obter', entrada),
+      atualizar: entrada => ipcRenderer.invoke('matriculas:atualizar', entrada)
     });
     const pagamentos: NonNullable<ContratoPonte['pagamentos']> = Object.freeze({
       inadimplentes: entrada => ipcRenderer.invoke('pagamentos:inadimplentes', entrada),
       criar: entrada => ipcRenderer.invoke('pagamentos:criar', entrada),
       listar: entrada => ipcRenderer.invoke('pagamentos:listar', entrada),
       obter: entrada => ipcRenderer.invoke('pagamentos:obter', entrada),
-      quitar: entrada => ipcRenderer.invoke('pagamentos:quitar', entrada)
+      quitar: entrada => ipcRenderer.invoke('pagamentos:quitar', entrada),
+      atualizar: entrada => ipcRenderer.invoke('pagamentos:atualizar', entrada),
+      cancelar: entrada => ipcRenderer.invoke('pagamentos:cancelar', entrada)
     });
     const avisos: NonNullable<ContratoPonte['avisos']> = Object.freeze({
       entrega: entrada => ipcRenderer.invoke('avisos:entrega', entrada),

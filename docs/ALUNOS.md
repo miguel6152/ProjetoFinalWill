@@ -1,6 +1,6 @@
 # CRUD de alunos — frente do Davi
 
-Implementado na branch `feat/davi-alunos-planos-matriculas`. A entrega de CRUD abrange alunos: cadastro, listagem paginada, busca, detalhes, edição, desativação e exclusão física sem dependências. A etapa seguinte acrescentou [ViaCEP](VIACEP.md) como auxílio opcional ao endereço, preservando preenchimento manual. Planos e matrículas serão tratados posteriormente.
+Esta documentação preserva o escopo da entrega original na branch `feat/davi-alunos-planos-matriculas`: CRUD de alunos (cadastro, listagem paginada, busca, detalhes, edição, desativação e exclusão física sem dependências) e integração opcional com [ViaCEP](VIACEP.md). Planos e matrículas, então descritos como etapas posteriores, também estão integrados atualmente; consulte [PLANOS.md](PLANOS.md) e [MATRICULAS.md](MATRICULAS.md).
 
 ## Arquivos e decisões
 

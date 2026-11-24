@@ -15,12 +15,12 @@ A tabela existente `pagamentos` representa a obrigação desde seu lançamento. 
 
 Quitar significa registrar o recebimento integral da obrigação. O operador escolhe dinheiro, Pix, cartão ou transferência. A baixa altera a situação de pendente para pago e registra a data e o meio na mesma transação. A data civil informada é normalizada em `pago_em` com horário UTC 00:00 para preservar o dia escolhido; esse horário é uma convenção de armazenamento. A tela exibe o dia registrado. `atualizado_em` registra o instante efetivo da operação.
 
-Cancelar ou encerrar a matrícula preserva os lançamentos existentes. Criar ou quitar manualmente exige uma matrícula existente; uma mudança de situação não gera cobranças, estornos nem baixas automáticas. A política sobre parcelas futuras após cancelamento ou encerramento permanece pendente. O fluxo desta etapa cobre registro manual e consulta. A política de correção ou estorno de um recebimento pago depende de definição do grupo.
+Cancelar ou encerrar a matrícula preserva os lançamentos existentes. Criar, quitar, editar ou cancelar uma mensalidade exige uma matrícula/registro existente; uma mudança de situação da matrícula não gera cobranças, estornos nem baixas automáticas. A política sobre parcelas futuras após cancelamento ou encerramento permanece pendente. Somente mensalidades pendentes podem ser editadas ou canceladas; editar exige uma referência atual do registro, e cancelar exige motivo de 5 a 500 caracteres (após trim) e grava instante e usuário responsável. Pagamentos pagos ou cancelados não podem ser alterados pelas operações disponíveis no aplicativo, nem removidos fisicamente. A política de correção ou estorno de um recebimento pago depende de definição do grupo.
 
 ## Como explicar o código
 
 - `PagamentosTela` coleta os dados, reaproveita a conversão de reais para centavos e apresenta os resultados.
-- `PonteAcademia` oferece os quatro métodos tipados da tela. `PagamentoHandler` confirma a origem da chamada e devolve respostas seguras.
+- `PonteAcademia` oferece sete métodos tipados: `inadimplentes`, `criar`, `listar`, `obter`, `quitar`, `atualizar` e `cancelar`. `PagamentoHandler` confirma a origem da chamada e devolve respostas seguras.
 - `PagamentoService.executar` verifica sessão, perfil, datas, valor e matrícula antes de chamar a operação correspondente.
-- `PagamentoRepository.quitar` atualiza somente uma linha ainda pendente e com valor positivo. Outra tentativa não consegue registrar um segundo recebimento.
+- `PagamentoRepository` atualiza somente uma linha pendente para edição, quitação ou cancelamento. Uma cobrança finalizada é protegida por triggers e não pode ser removida fisicamente.
 - `npm run test:pagamentos` exercita o fluxo com Electron e um banco temporário, incluindo perfis, chamadas simultâneas, filtros, formulários e persistência.
